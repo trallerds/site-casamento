@@ -11,7 +11,7 @@ function limit() {
 }
 
 export async function POST(request: Request) {
-  const guard = rateLimit(`payments:${clientIp(request)}`, limit(), 60 * 60 * 1000);
+  const guard = await rateLimit(`payments:${clientIp(request)}`, limit(), 60 * 60 * 1000);
   if (!guard.allowed) return tooManyRequests(guard.retryAfterSeconds);
 
   let giftId = 0;

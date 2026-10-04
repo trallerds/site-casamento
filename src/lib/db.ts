@@ -147,6 +147,15 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS rate_limit (
+  bucket TEXT NOT NULL,
+  window_start TIMESTAMPTZ NOT NULL,
+  hits INTEGER NOT NULL,
+  PRIMARY KEY (bucket, window_start)
+);
+
+CREATE INDEX IF NOT EXISTS rate_limit_window_idx ON rate_limit(window_start);
 `;
 
 type SeedGift = {
@@ -326,6 +335,9 @@ function ensureSchema() {
     const client = await pool().connect();
     try {
       await client.query(SCHEMA);
+      await client.query(
+        `DELETE FROM rate_limit WHERE window_start < now() - interval '2 days'`,
+      );
       await seed(client);
     } finally {
       client.release();

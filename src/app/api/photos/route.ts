@@ -17,7 +17,7 @@ function hourlyLimit() {
 }
 
 export async function POST(request: Request) {
-  const guard = rateLimit(`photos:${clientIp(request)}`, hourlyLimit(), 60 * 60 * 1000);
+  const guard = await rateLimit(`photos:${clientIp(request)}`, hourlyLimit(), 60 * 60 * 1000);
   if (!guard.allowed) return tooManyRequests(guard.retryAfterSeconds);
 
   let form: FormData;
