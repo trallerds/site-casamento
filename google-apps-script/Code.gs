@@ -49,13 +49,14 @@ function doPost(e) {
       var file = target.createFile(blob);
       file.setDescription("Foto enviada pelo convidado via Deixa Aqui");
 
-      return json_({ id: file.getId(), name: file.getName(), size: bytes.length });
+      return json_({ ok: true, id: file.getId(), name: file.getName(), size: bytes.length });
     }
 
     if (body.action === "read") {
       var toRead = DriveApp.getFileById(String(body.id));
       var readBlob = toRead.getBlob();
       return json_({
+        ok: true,
         id: String(body.id),
         mimeType: readBlob.getContentType(),
         bytes: Utilities.base64Encode(readBlob.getBytes()),
