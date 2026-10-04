@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Presente inválido." }, { status: 400 });
   }
 
-  const gift = findGiftById(giftId);
+  const gift = await findGiftById(giftId);
   if (!gift || !gift.active) {
     return Response.json({ error: "Presente indisponível." }, { status: 404 });
   }

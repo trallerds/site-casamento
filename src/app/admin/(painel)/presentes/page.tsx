@@ -12,8 +12,8 @@ export default async function AdminGiftsPage({
   searchParams: Promise<{ editar?: string; erro?: string; salvo?: string }>;
 }) {
   const query = await searchParams;
-  const gifts = listAllGifts();
-  const totals = giftPaymentTotals();
+  const gifts = await listAllGifts();
+  const totals = await giftPaymentTotals();
   const totalById = new Map(totals.map((row) => [row.gift_id, row]));
   const editing = query.editar ? gifts.find((gift) => gift.slug === query.editar) : null;
 

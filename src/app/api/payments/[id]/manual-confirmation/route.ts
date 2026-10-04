@@ -12,12 +12,12 @@ export async function POST(
   if (!guard.allowed) return tooManyRequests(guard.retryAfterSeconds);
 
   const { id } = await params;
-  const payment = findPaymentByPublicId(id);
+  const payment = await findPaymentByPublicId(id);
   if (!payment) return Response.json({ error: "Cobrança não encontrada." }, { status: 404 });
 
-  getDb()
+  await getDb()
     .prepare(
-      `UPDATE payments SET claimed_at = COALESCE(claimed_at, datetime('now')), updated_at = datetime('now')
+      `UPDATE payments SET claimed_at = COALESCE(claimed_at, now()), updated_at = now()
        WHERE id = ?`,
     )
     .run(payment.id);

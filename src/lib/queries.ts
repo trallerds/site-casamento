@@ -28,7 +28,7 @@ export type StatsRow = {
 };
 export type PaymentJoinedRow = Payment & { gift_name: string; gift_slug: string };
 
-export function listActiveGifts() {
+export async function listActiveGifts() {
   return getDb()
     .prepare<[], GiftRow>(
       `SELECT * FROM gifts
@@ -42,15 +42,16 @@ export function isGiftAvailable(gift: GiftRow) {
   return gift.active === 1 && gift.total_quantity - gift.sold_quantity > 0;
 }
 
-export function listAllGifts() {
+export async function listAllGifts() {
   return getDb()
     .prepare<[], GiftRow>(`SELECT * FROM gifts ORDER BY display_order ASC, id ASC`)
     .all();
 }
 
-export function listGiftsGrouped() {
+export async function listGiftsGrouped() {
+  const gifts = await listActiveGifts();
   const groups = new Map<string, GiftRow[]>();
-  for (const gift of listActiveGifts()) {
+  for (const gift of gifts) {
     const list = groups.get(gift.category) ?? [];
     list.push(gift);
     groups.set(gift.category, list);
@@ -58,31 +59,31 @@ export function listGiftsGrouped() {
   return [...groups.entries()];
 }
 
-export function findGiftBySlug(slug: string) {
+export async function findGiftBySlug(slug: string) {
   return getDb()
     .prepare<[string], GiftRow>(`SELECT * FROM gifts WHERE slug = ?`)
     .get(slug);
 }
 
-export function findGiftById(id: number) {
+export async function findGiftById(id: number) {
   return getDb()
     .prepare<[number], GiftRow>(`SELECT * FROM gifts WHERE id = ?`)
     .get(id);
 }
 
-export function findPaymentByPublicId(publicId: string) {
+export async function findPaymentByPublicId(publicId: string) {
   return getDb()
     .prepare<[string], PaymentRow>(`SELECT * FROM payments WHERE public_id = ?`)
     .get(publicId);
 }
 
-export function findPaymentByProviderChargeId(providerChargeId: string) {
+export async function findPaymentByProviderChargeId(providerChargeId: string) {
   return getDb()
     .prepare<[string], PaymentRow>(`SELECT * FROM payments WHERE provider_charge_id = ?`)
     .get(providerChargeId);
 }
 
-export function giftPaymentTotals() {
+export async function giftPaymentTotals() {
   return getDb()
     .prepare<[], GiftTotalsRow>(`
       SELECT g.id AS gift_id,
@@ -103,8 +104,8 @@ export function giftPaymentTotals() {
     .all();
 }
 
-export function dashboardStats(): StatsRow {
-  const row = getDb()
+export async function dashboardStats(): Promise<StatsRow> {
+  const row = await getDb()
     .prepare<[], StatsRow>(`
       SELECT
         (SELECT COUNT(*) FROM photo_uploads WHERE hidden = 0) AS photos_total,
@@ -134,7 +135,7 @@ export function dashboardStats(): StatsRow {
   );
 }
 
-export function listPayments(limit = 200) {
+export async function listPayments(limit = 200) {
   return getDb()
     .prepare<[number], PaymentJoinedRow>(
       `SELECT p.*, g.name AS gift_name, g.slug AS gift_slug
@@ -146,7 +147,7 @@ export function listPayments(limit = 200) {
     .all(limit);
 }
 
-export function listPhotos(limit = 200) {
+export async function listPhotos(limit = 200) {
   return getDb()
     .prepare<[number], PhotoRow>(
       `SELECT * FROM photo_uploads WHERE hidden = 0 ORDER BY id DESC LIMIT ?`,

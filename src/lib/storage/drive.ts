@@ -12,7 +12,7 @@ type DriveConfig = {
   folderId: string;
 };
 
-function readConfig(): DriveConfig {
+async function readConfig(): Promise<DriveConfig> {
   const stored = (() => {
     const raw = getSetting("google_drive_config");
     if (!raw) return {} as Partial<DriveConfig>;
@@ -28,20 +28,20 @@ function readConfig(): DriveConfig {
     clientSecret: stored.clientSecret || process.env.GOOGLE_CLIENT_SECRET || "",
     refreshToken: stored.refreshToken || process.env.GOOGLE_REFRESH_TOKEN || "",
     folderId:
-      stored.folderId || getSetting("google_drive_folder_id") || process.env.GOOGLE_DRIVE_FOLDER_ID || "",
+      stored.folderId || (await getSetting("google_drive_folder_id")) || process.env.GOOGLE_DRIVE_FOLDER_ID || "",
   };
 }
 
-export function isDriveConfigured() {
-  const config = readConfig();
+export async function isDriveConfigured() {
+  const config = await readConfig();
   return Boolean(config.clientId && config.clientSecret && config.refreshToken && config.folderId);
 }
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
 async function accessToken() {
-  const config = readConfig();
-  if (!isDriveConfigured()) {
+  const config = await readConfig();
+  if (!(await isDriveConfigured())) {
     throw new StorageError("Google Drive não configurado (clientId, refreshToken e folderId).", 503);
   }
   if (cachedToken && cachedToken.expiresAt > Date.now() + 30_000) {
@@ -104,7 +104,7 @@ export const googleDriveStorage: PhotoStorage = {
   name: "drive",
 
   async save(input: SaveInput): Promise<StoredObject> {
-    const config = readConfig();
+    const config = await readConfig();
     const token = await accessToken();
     const extension = input.mimeType === "image/png" ? "png" : "jpg";
     const fileName = `${input.publicId}.${extension}`;
@@ -168,8 +168,8 @@ export const googleDriveStorage: PhotoStorage = {
   },
 
   async health() {
-    const config = readConfig();
-    if (!isDriveConfigured()) {
+    const config = await readConfig();
+    if (!(await isDriveConfigured())) {
       const missing = [
         !config.clientId && "clientId",
         !config.clientSecret && "clientSecret",

@@ -13,7 +13,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function AdminPaymentsPage() {
-  const payments = listPayments();
+  const payments = await listPayments();
 
   return (
     <div>

@@ -7,8 +7,8 @@ import { photoStorageHealth, photoStorageName } from "@/lib/storage";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const stats = dashboardStats();
-  const totals = giftPaymentTotals();
+  const stats = await dashboardStats();
+  const totals = await giftPaymentTotals();
   const pix = await pixProviderHealth();
   const storage = await photoStorageHealth();
 
@@ -39,7 +39,7 @@ export default async function AdminDashboardPage() {
           </p>
           <p className="mt-1 text-sm leading-relaxed text-navy-800/80">
             Hoje elas ficam salvas apenas neste servidor, em <code>data/uploads</code>. Para gravar na
-            pasta do Drive, configure as credenciais em Configurações → Fotos e troque “Onde guardar”
+            pasta do Drive, configure as credenciais em Configurações → Fotos e troque "Onde guardar"
             para <em>Google Drive das noivas</em>. Isso exige rodar <code>npm run drive:auth</code> uma
             vez, entrando na conta que tem acesso de escrita à pasta.
           </p>

@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function GiftsPage() {
-  const groups = listGiftsGrouped();
+export default async function GiftsPage() {
+  const groups = await listGiftsGrouped();
 
   return (
     <>

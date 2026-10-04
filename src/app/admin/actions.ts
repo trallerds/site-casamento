@@ -27,7 +27,7 @@ export async function loginAction(_previous: LoginState, formData: FormData): Pr
     await new Promise((resolve) => setTimeout(resolve, 400));
     return { error: "Senha incorreta." };
   }
-  const session = createAdminSession();
+  const session = await createAdminSession();
   await setSessionCookie(session.token, session.expiresAt);
   redirect("/admin");
 }
@@ -41,8 +41,8 @@ async function requireAdmin() {
   if (!(await isAuthenticated())) redirect("/admin/login");
 }
 
-function getGiftSold(giftId: number) {
-  const row = getDb()
+async function getGiftSold(giftId: number) {
+  const row = await getDb()
     .prepare<[number], { sold: number }>(`SELECT sold_quantity AS sold FROM gifts WHERE id = ?`)
     .get(giftId);
   return row?.sold ?? 0;
@@ -71,45 +71,49 @@ export async function saveGiftAction(formData: FormData) {
 
   const db = getDb();
   if (id) {
-    db.prepare(
-      `UPDATE gifts
-       SET name = ?, description = ?, amount_cents = ?, category = ?, image_key = ?,
-           display_order = ?, total_quantity = ?, active = ?, updated_at = datetime('now')
-       WHERE id = ?`,
-    ).run(
-      name,
-      description,
-      amountCents ?? 0,
-      category,
-      imageKey,
-      displayOrder,
-      Math.max(totalQuantity, getGiftSold(id)),
-      active,
-      id,
-    );
+    await db
+      .prepare(
+        `UPDATE gifts
+         SET name = ?, description = ?, amount_cents = ?, category = ?, image_key = ?,
+             display_order = ?, total_quantity = ?, active = ?, updated_at = now()
+         WHERE id = ?`,
+      )
+      .run(
+        name,
+        description,
+        amountCents ?? 0,
+        category,
+        imageKey,
+        displayOrder,
+        Math.max(totalQuantity, await getGiftSold(id)),
+        active,
+        id,
+      );
   } else {
     const base = slugify(name) || `presente-${Date.now()}`;
     let slug = base;
     let suffix = 2;
-    while (db.prepare(`SELECT 1 FROM gifts WHERE slug = ?`).get(slug)) {
+    while (await db.prepare(`SELECT 1 FROM gifts WHERE slug = ?`).get(slug)) {
       slug = `${base}-${suffix}`;
       suffix += 1;
     }
-    db.prepare(
-      `INSERT INTO gifts
-        (slug, name, description, image_key, amount_cents, category, display_order, total_quantity, active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(
-      slug,
-      name,
-      description,
-      imageKey,
-      amountCents ?? 0,
-      category,
-      displayOrder,
-      totalQuantity,
-      active,
-    );
+    await db
+      .prepare(
+        `INSERT INTO gifts
+           (slug, name, description, image_key, amount_cents, category, display_order, total_quantity, active)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        slug,
+        name,
+        description,
+        imageKey,
+        amountCents ?? 0,
+        category,
+        displayOrder,
+        totalQuantity,
+        active,
+      );
   }
 
   revalidatePath("/admin/presentes");
@@ -122,8 +126,8 @@ export async function toggleGiftAction(formData: FormData) {
   await requireAdmin();
   const id = Number(field(formData, "id"));
   if (!id) return;
-  getDb()
-    .prepare(`UPDATE gifts SET active = CASE active WHEN 1 THEN 0 ELSE 1 END, updated_at = datetime('now') WHERE id = ?`)
+  await getDb()
+    .prepare(`UPDATE gifts SET active = CASE active WHEN 1 THEN 0 ELSE 1 END, updated_at = now() WHERE id = ?`)
     .run(id);
   revalidatePath("/admin/presentes");
   revalidatePath("/presentes");
@@ -133,19 +137,19 @@ export async function confirmPaymentAction(formData: FormData) {
   await requireAdmin();
   const id = Number(field(formData, "id"));
   if (!id) return;
-  const payment = getDb()
+  const payment = await getDb()
     .prepare<[number], { gift_id: number; status: string }>(
       `SELECT gift_id, status FROM payments WHERE id = ?`,
     )
     .get(id);
   if (!payment || payment.status === "paid") return;
-  markPaymentPaid({
+  await markPaymentPaid({
     paymentId: id,
     providerEventId: `manual:${id}`,
     eventType: "manual.confirmed",
     payload: "confirmado no painel",
   });
-  getDb().prepare(`UPDATE payments SET confirmed_by_admin = 1 WHERE id = ?`).run(id);
+  await getDb().prepare(`UPDATE payments SET confirmed_by_admin = 1 WHERE id = ?`).run(id);
   revalidatePath("/admin/pagamentos");
   revalidatePath("/admin");
   revalidatePath("/presentes");
@@ -155,8 +159,8 @@ export async function cancelPaymentAction(formData: FormData) {
   await requireAdmin();
   const id = Number(field(formData, "id"));
   if (!id) return;
-  getDb()
-    .prepare(`UPDATE payments SET status = 'cancelled', updated_at = datetime('now') WHERE id = ?`)
+  await getDb()
+    .prepare(`UPDATE payments SET status = 'cancelled', updated_at = now() WHERE id = ?`)
     .run(id);
   revalidatePath("/admin/pagamentos");
   revalidatePath("/admin");
@@ -166,7 +170,7 @@ export async function hidePhotoAction(formData: FormData) {
   await requireAdmin();
   const publicId = field(formData, "public_id");
   if (!publicId) return;
-  getDb().prepare(`UPDATE photo_uploads SET hidden = 1 WHERE public_id = ?`).run(publicId);
+  await getDb().prepare(`UPDATE photo_uploads SET hidden = 1 WHERE public_id = ?`).run(publicId);
   revalidatePath("/admin/fotos");
   revalidatePath("/admin");
 }
@@ -188,7 +192,7 @@ export async function saveSettingsAction(formData: FormData) {
   for (const key of SETTING_KEYS) {
     if (SECRET_SETTINGS.includes(key as (typeof SECRET_SETTINGS)[number])) continue;
     const value = formData.get(key);
-    if (typeof value === "string") setSetting(key, value);
+    if (typeof value === "string") await setSetting(key, value);
   }
 
   for (const key of SECRET_SETTINGS) {
@@ -197,7 +201,7 @@ export async function saveSettingsAction(formData: FormData) {
       const value = formData.get(`${key}[${field}]`);
       if (typeof value === "string" && value.trim() !== "") submitted[field] = value.trim();
     }
-    setSetting(key, mergeSecretConfig(getSetting(key), submitted));
+    await setSetting(key, mergeSecretConfig(await getSetting(key), submitted));
   }
 
   revalidatePath("/");

@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const photo = getDb()
+  const photo = await getDb()
     .prepare<[string], { status: string; error: string | null }>(
       `SELECT status, error FROM photo_uploads WHERE public_id = ?`,
     )

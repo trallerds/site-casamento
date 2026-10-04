@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   }
 
   const publicId = randomId(14);
-  const recordId = createPhotoRecord({
+  const recordId = await createPhotoRecord({
     publicId,
     filename: file.name || "foto.jpg",
     mimeType: validated.mimeType,
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     storageProvider: photoStorageName(),
   });
 
-  const photo = getDb()
+  const photo = await getDb()
     .prepare<[number], PhotoUpload>(`SELECT * FROM photo_uploads WHERE id = ?`)
     .get(recordId);
 

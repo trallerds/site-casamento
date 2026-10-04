@@ -24,8 +24,8 @@ type OpenPixWebhookPayload = {
   };
 };
 
-function config() {
-  const apiKey = (getSetting("pix_provider_config") || process.env.OPENPIX_API_KEY || "").trim();
+async function config() {
+  const apiKey = ((await getSetting("pix_provider_config")) || process.env.OPENPIX_API_KEY || "").trim();
   const baseUrl = (process.env.OPENPIX_BASE_URL || "https://api.openpix.dev/v1").replace(/\/$/, "");
   const webhookToken = (process.env.OPENPIX_WEBHOOK_TOKEN || "").trim();
   return { apiKey, baseUrl, webhookToken };
@@ -36,7 +36,7 @@ export const openPixProvider: PixProvider = {
   supportsWebhooks: true,
 
   async createCharge(input: PixChargeRequest): Promise<PixCharge> {
-    const { apiKey, baseUrl } = config();
+    const { apiKey, baseUrl } = await config();
     if (!apiKey) throw new PixError("OpenPix sem credencial (OPENPIX_API_KEY).", 503);
 
     const response = await fetch(`${baseUrl}/charge`, {
@@ -73,7 +73,7 @@ export const openPixProvider: PixProvider = {
   },
 
   async parseWebhook(request: Request, rawBody: string): Promise<PixEvent | null> {
-    const { webhookToken } = config();
+    const { webhookToken } = await config();
     if (!webhookToken) return null;
 
     const provided =
@@ -104,7 +104,7 @@ export const openPixProvider: PixProvider = {
   },
 
   async health() {
-    const { apiKey, baseUrl } = config();
+    const { apiKey, baseUrl } = await config();
     if (!apiKey) return { ok: false, message: "OPENPIX_API_KEY não configurada." };
     try {
       const response = await fetch(`${baseUrl}/health`, {

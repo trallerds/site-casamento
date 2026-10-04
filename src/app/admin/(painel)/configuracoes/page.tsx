@@ -20,7 +20,7 @@ export default async function AdminSettingsPage({
   searchParams: Promise<{ salvo?: string }>;
 }) {
   const query = await searchParams;
-  const settings = getSettings();
+  const settings = await getSettings();
   const pix = await pixProviderHealth();
   const storage = await photoStorageHealth();
   const drivePreview = photoStorageName() === "drive" ? null : await googleDriveStorage.health();

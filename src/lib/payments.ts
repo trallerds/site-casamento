@@ -18,11 +18,12 @@ export async function createPaymentForGift(gift: Gift) {
     expiresAt: provider.supportsWebhooks ? expiresAt : null,
   });
 
-  const result = getDb()
+  const result = await getDb()
     .prepare(
       `INSERT INTO payments
         (public_id, gift_id, provider, provider_charge_id, amount_cents, status, pix_code, expires_at)
-       VALUES (@public_id, @gift_id, @provider, @provider_charge_id, @amount_cents, 'pending', @pix_code, @expires_at)`,
+       VALUES (@public_id, @gift_id, @provider, @provider_charge_id, @amount_cents, 'pending', @pix_code, @expires_at)
+       RETURNING id`,
     )
     .run({
       public_id: publicId,
@@ -34,7 +35,7 @@ export async function createPaymentForGift(gift: Gift) {
       expires_at: charge.expiresAt ?? expiresAt.toISOString(),
     });
 
-  return { id: Number(result.lastInsertRowid), publicId };
+  return { id: Number(result.rows[0]?.id), publicId };
 }
 
 export type SaleResult = {
@@ -42,21 +43,17 @@ export type SaleResult = {
   remaining: number | null;
 };
 
-/**
- * Baixa uma cota do presente. A condição no WHERE garante que duas pessoas
- * não comprem a última unidade ao mesmo tempo: só uma requisição afeta linhas.
- */
-function claimGiftUnit(giftId: number): SaleResult {
+async function claimGiftUnit(giftId: number): Promise<SaleResult> {
   const db = getDb();
-  const updated = db
+  const updated = await db
     .prepare(
-      `UPDATE gifts SET sold_quantity = sold_quantity + 1, updated_at = datetime('now')
+      `UPDATE gifts SET sold_quantity = sold_quantity + 1, updated_at = now()
        WHERE id = ? AND total_quantity - sold_quantity > 0`,
     )
     .run(giftId);
 
-  if (updated.changes > 0) {
-    const row = db
+  if (updated.rowCount > 0) {
+    const row = await db
       .prepare<[number], { available: number }>(
         `SELECT total_quantity - sold_quantity AS available FROM gifts WHERE id = ?`,
       )
@@ -64,7 +61,7 @@ function claimGiftUnit(giftId: number): SaleResult {
     return { soldOut: false, remaining: row?.available ?? null };
   }
 
-  const row = db
+  const row = await db
     .prepare<[number], { available: number }>(
       `SELECT total_quantity - sold_quantity AS available FROM gifts WHERE id = ?`,
     )
@@ -72,26 +69,28 @@ function claimGiftUnit(giftId: number): SaleResult {
   return { soldOut: true, remaining: row?.available ?? 0 };
 }
 
-export function markPaymentPaid(options: {
+export async function markPaymentPaid(options: {
   paymentId: number;
   providerEventId: string;
   eventType: string;
   payload: string;
-}): { alreadyProcessed: boolean; updated: boolean; sale: SaleResult | null } {
+}): Promise<{ alreadyProcessed: boolean; updated: boolean; sale: SaleResult | null }> {
   const db = getDb();
 
-  const run = db.transaction(() => {
-    const inserted = db
+  const run = await db.transaction(async (tx) => {
+    const inserted = await tx
       .prepare(
-        `INSERT OR IGNORE INTO payment_events
+        `INSERT INTO payment_events
           (payment_id, provider_event_id, event_type, payload, processed_at)
-         VALUES (?, ?, ?, ?, datetime('now'))`,
+         VALUES (?, ?, ?, ?, now())
+         ON CONFLICT (provider_event_id) DO NOTHING
+         RETURNING id`,
       )
       .run(options.paymentId, options.providerEventId, options.eventType, options.payload);
 
-    if (inserted.changes === 0) return { alreadyProcessed: true, updated: false, sale: null };
+    if (inserted.rowCount === 0) return { alreadyProcessed: true, updated: false, sale: null };
 
-    const payment = db
+    const payment = await tx
       .prepare<[number], Payment>(`SELECT * FROM payments WHERE id = ?`)
       .get(options.paymentId);
 
@@ -99,24 +98,26 @@ export function markPaymentPaid(options: {
       return { alreadyProcessed: false, updated: false, sale: null };
     }
 
-    db.prepare(
-      `UPDATE payments
-       SET status = 'paid', paid_at = COALESCE(paid_at, datetime('now')), updated_at = datetime('now')
-       WHERE id = ?`,
-    ).run(options.paymentId);
+    await tx
+      .prepare(
+        `UPDATE payments
+         SET status = 'paid', paid_at = COALESCE(paid_at, now()), updated_at = now()
+         WHERE id = ?`,
+      )
+      .run(options.paymentId);
 
-    const sale = claimGiftUnit(payment.gift_id);
+    const sale = await claimGiftUnit(payment.gift_id);
     if (sale.soldOut) {
-      db.prepare(`UPDATE payments SET oversold = 1 WHERE id = ?`).run(options.paymentId);
+      await tx.prepare(`UPDATE payments SET oversold = 1 WHERE id = ?`).run(options.paymentId);
     }
 
     return { alreadyProcessed: false, updated: true, sale };
   });
 
-  return run();
+  return run;
 }
 
-export function registerPaymentEvent(event: {
+export async function registerPaymentEvent(event: {
   providerEventId: string;
   eventType: string;
   payload: string;
@@ -124,9 +125,10 @@ export function registerPaymentEvent(event: {
 }) {
   return getDb()
     .prepare(
-      `INSERT OR IGNORE INTO payment_events
+      `INSERT INTO payment_events
         (payment_id, provider_event_id, event_type, payload, received_at)
-       VALUES (?, ?, ?, ?, datetime('now'))`,
+       VALUES (?, ?, ?, ?, now())
+       ON CONFLICT (provider_event_id) DO NOTHING`,
     )
     .run(event.paymentId, event.providerEventId, event.eventType, event.payload);
 }

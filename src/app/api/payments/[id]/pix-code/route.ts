@@ -12,7 +12,7 @@ export async function POST(
   if (!guard.allowed) return tooManyRequests(guard.retryAfterSeconds);
 
   const { id } = await params;
-  const payment = findPaymentByPublicId(id);
+  const payment = await findPaymentByPublicId(id);
   if (!payment) return Response.json({ error: "Cobrança não encontrada." }, { status: 404 });
 
   if (!payment.pix_code || !looksLikePixPayload(payment.pix_code)) {

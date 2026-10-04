@@ -26,22 +26,22 @@ export function verifyAdminPassword(password: string) {
   return timingSafeEqual(hashSecret(password), stored.trim());
 }
 
-export function createAdminSession() {
+export async function createAdminSession() {
   const token = crypto.randomBytes(32).toString("base64url");
   const tokenHash = hashSecret(token);
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  getDb()
+  await getDb()
     .prepare(`INSERT INTO admin_sessions (token_hash, expires_at) VALUES (?, ?)`)
     .run(tokenHash, expiresAt.toISOString());
   return { token, expiresAt };
 }
 
-export function deleteAdminSession(token: string) {
-  getDb().prepare(`DELETE FROM admin_sessions WHERE token_hash = ?`).run(hashSecret(token));
+export async function deleteAdminSession(token: string) {
+  await getDb().prepare(`DELETE FROM admin_sessions WHERE token_hash = ?`).run(hashSecret(token));
 }
 
-export function purgeExpiredSessions() {
-  getDb().prepare(`DELETE FROM admin_sessions WHERE expires_at < datetime('now')`).run();
+export async function purgeExpiredSessions() {
+  await getDb().prepare(`DELETE FROM admin_sessions WHERE expires_at < now()`).run();
 }
 
 export async function getAdminSessionToken() {
@@ -53,7 +53,7 @@ export async function isAuthenticated() {
   if (!isAdminEnabled()) return false;
   const token = await getAdminSessionToken();
   if (!token) return false;
-  const row = getDb()
+  const row = await getDb()
     .prepare<[string], { expires_at: string }>(
       `SELECT expires_at FROM admin_sessions WHERE token_hash = ?`,
     )
@@ -75,7 +75,7 @@ export async function setSessionCookie(token: string, expiresAt: Date) {
 
 export async function clearSessionCookie() {
   const token = await getAdminSessionToken();
-  if (token) deleteAdminSession(token);
+  if (token) await deleteAdminSession(token);
   const store = await cookies();
   store.set(COOKIE_NAME, "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
 }

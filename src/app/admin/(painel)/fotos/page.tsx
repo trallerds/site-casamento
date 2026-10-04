@@ -12,13 +12,13 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function AdminPhotosPage() {
-  const photos = listPhotos();
+  const photos = await listPhotos();
 
   return (
     <div>
       <h1 className="font-display text-2xl text-navy-900">Fotos</h1>
       <p className="mt-2 text-sm text-navy-800/65">
-        As fotos ficam privadas. “Ocultar” remove a foto da lista do painel; o arquivo continua no
+        As fotos ficam privadas. "Ocultar" remove a foto da lista do painel; o arquivo continua no
         Drive até ser apagado por lá.
       </p>
 

@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const payment = findPaymentByPublicId(id);
+  const payment = await findPaymentByPublicId(id);
   if (!payment) return Response.json({ error: "Cobrança não encontrada." }, { status: 404 });
 
   return Response.json(

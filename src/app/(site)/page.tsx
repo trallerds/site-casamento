@@ -4,13 +4,13 @@ import { GiftCard } from "@/components/GiftCard";
 import { getSetting, weddingDateLabel, weddingNames } from "@/lib/settings";
 import { listActiveGifts } from "@/lib/queries";
 
-export default function HomePage() {
-  const names = weddingNames();
-  const date = weddingDateLabel();
-  const gifts = listActiveGifts().slice(0, 3);
-  const heroTitle = getSetting("hero_title") ?? "";
-  const storyTitle = getSetting("story_title") ?? "Nossa história";
-  const storyText = getSetting("story_text") ?? "";
+export default async function HomePage() {
+  const names = await weddingNames();
+  const date = await weddingDateLabel();
+  const gifts = (await listActiveGifts()).slice(0, 3);
+  const heroTitle = (await getSetting("hero_title")) ?? "";
+  const storyTitle = (await getSetting("story_title")) ?? "Nossa história";
+  const storyText = (await getSetting("story_text")) ?? "";
 
   return (
     <>

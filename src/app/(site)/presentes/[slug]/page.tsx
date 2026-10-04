@@ -14,14 +14,14 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const gift = findGiftBySlug(slug);
+  const gift = await findGiftBySlug(slug);
   if (!gift) return { title: "Presente" };
   return { title: gift.name, description: gift.description };
 }
 
 export default async function GiftDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const gift = findGiftBySlug(slug);
+  const gift = await findGiftBySlug(slug);
   if (!gift || !gift.active) notFound();
   const available = isGiftAvailable(gift);
 

@@ -11,7 +11,7 @@ export async function GET(
   if (!(await isAuthenticated())) return unauthorized();
 
   const { id } = await params;
-  const photo = getDb()
+  const photo = await getDb()
     .prepare<[string], PhotoUpload>(`SELECT * FROM photo_uploads WHERE public_id = ?`)
     .get(id);
 
