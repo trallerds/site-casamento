@@ -128,16 +128,21 @@ const EXTENSION_BY_MIME: Record<string, string> = {
 
 export async function pushToStorage(photo: PhotoUpload, buffer: Buffer) {
   const storage = getPhotoStorage();
-  const updateStaging = getDb().prepare(
-    `UPDATE photo_uploads SET staging_key = ?, status = 'uploading', error = NULL WHERE id = ?`,
-  );
+  const db = getDb();
 
   let stagingKey: string | null = null;
   if (storage.name !== "local") {
-    stagingKey = await stage(photo.public_id, EXTENSION_BY_MIME[photo.mime_type] ?? ".jpg", buffer);
-    updateStaging.run(stagingKey, photo.id);
+    try {
+      stagingKey = await stage(photo.public_id, EXTENSION_BY_MIME[photo.mime_type] ?? ".jpg", buffer);
+      db.prepare(
+        `UPDATE photo_uploads SET staging_key = ?, status = 'uploading', error = NULL WHERE id = ?`,
+      ).run(stagingKey, photo.id);
+    } catch {
+      stagingKey = null;
+      db.prepare(`UPDATE photo_uploads SET status = 'uploading' WHERE id = ?`).run(photo.id);
+    }
   } else {
-    getDb().prepare(`UPDATE photo_uploads SET status = 'uploading' WHERE id = ?`).run(photo.id);
+    db.prepare(`UPDATE photo_uploads SET status = 'uploading' WHERE id = ?`).run(photo.id);
   }
 
   try {
@@ -147,21 +152,21 @@ export async function pushToStorage(photo: PhotoUpload, buffer: Buffer) {
       filename: photo.original_filename,
       publicId: photo.public_id,
     });
-    getDb()
-      .prepare(
-        `UPDATE photo_uploads
-         SET status = 'uploaded', storage_key = ?, external_id = ?, staging_key = NULL,
-             uploaded_at = datetime('now'), error = NULL
-         WHERE id = ?`,
-      )
-      .run(stored.key, stored.externalId, photo.id);
+    db.prepare(
+      `UPDATE photo_uploads
+       SET status = 'uploaded', storage_key = ?, external_id = ?, staging_key = NULL,
+           uploaded_at = datetime('now'), error = NULL
+       WHERE id = ?`,
+    ).run(stored.key, stored.externalId, photo.id);
     await dropStaged(stagingKey);
     return true;
   } catch (error) {
     const message = (error as Error).message.slice(0, 300);
-    getDb()
-      .prepare(`UPDATE photo_uploads SET status = 'failed', staging_key = ?, error = ? WHERE id = ?`)
-      .run(stagingKey, message, photo.id);
+    db.prepare(`UPDATE photo_uploads SET status = 'failed', staging_key = ?, error = ? WHERE id = ?`).run(
+      stagingKey,
+      message,
+      photo.id,
+    );
     return false;
   }
 }
