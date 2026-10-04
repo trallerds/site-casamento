@@ -20,6 +20,7 @@ export default async function ConfirmationPage({
   searchParams: Promise<{ p?: string }>;
 }) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const names = await weddingNames();
   const gift = await findGiftBySlug(slug);
   const payment = query.p ? await findPaymentByPublicId(query.p) : undefined;
 
@@ -53,9 +54,9 @@ export default async function ConfirmationPage({
       <p className="mt-6 text-[0.98rem] leading-relaxed text-navy-800/80">
         Obrigada por fazer parte desse momento. Um pedacinho do nosso dia já é seu também.
       </p>
-      <p className="mt-6 text-sm text-navy-800/60">{await weddingNames()}</p>
+      <p className="mt-6 text-sm text-navy-800/60">{names}</p>
 
-      <div className="mt-10 flex flex-col gap-3 sm:flex_row sm:justify-center">
+      <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Link
           href="/presentes"
           className="rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory"

@@ -32,14 +32,14 @@ export default async function AdminDashboardPage() {
     <div>
       <h1 className="font-display text-2xl text-navy-900">Dashboard</h1>
 
-      {photoStorageName() === "local" ? (
+      {(await photoStorageName()) === "local" ? (
         <div className="mt-5 rounded-xl border border-gold-600/40 bg-gold-100/60 p-5">
           <p className="text-sm font-medium text-navy-900">
             As fotos NÃO estão indo para o Google Drive
           </p>
           <p className="mt-1 text-sm leading-relaxed text-navy-800/80">
             Hoje elas ficam salvas apenas neste servidor, em <code>data/uploads</code>. Para gravar na
-            pasta do Drive, configure as credenciais em Configurações → Fotos e troque "Onde guardar"
+            pasta do Drive, configure as credenciais em Configurações → Fotos e troque “Onde guardar”
             para <em>Google Drive das noivas</em>. Isso exige rodar <code>npm run drive:auth</code> uma
             vez, entrando na conta que tem acesso de escrita à pasta.
           </p>

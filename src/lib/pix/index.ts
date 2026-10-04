@@ -7,13 +7,16 @@ export type { PixCharge, PixChargeRequest, PixEvent, PixProvider, ProviderHealth
 export { PixError } from "./types";
 
 export async function pixProviderName() {
-  const configured = (await getSetting("pix_provider")) || process.env.PIX_PROVIDER || "manual";
-  return configured.trim() === "openpix" ? "openpix" : "manual";
+  const configured = (
+    (await getSetting("pix_provider")) ||
+    process.env.PIX_PROVIDER ||
+    "manual"
+  ).trim();
+  return configured === "openpix" ? "openpix" : "manual";
 }
 
 export async function getPixProvider(): Promise<PixProvider> {
-  const name = await pixProviderName();
-  return name === "openpix" ? openPixProvider : manualPixProvider;
+  return (await pixProviderName()) === "openpix" ? openPixProvider : manualPixProvider;
 }
 
 export async function pixProviderHealth() {

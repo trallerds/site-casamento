@@ -14,8 +14,8 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
 }
 
 async function SiteFooter() {
-  const names = weddingNames();
-  const date = weddingDateLabel();
+  const names = await weddingNames();
+  const date = await weddingDateLabel();
   return (
     <footer className="mx-auto mt-20 w-full max-w-5xl px-5 pb-28 pt-10 text-center md:px-8 md:pb-12">
       <div className="rule-gold mb-8" />

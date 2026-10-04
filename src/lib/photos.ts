@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getDb, type PhotoUpload } from "@/lib/db";
+import { run, sql, type PhotoUpload } from "@/lib/db";
 import { getPhotoStorage } from "@/lib/storage";
 
 const STAGING_DIR = path.join(process.cwd(), "data", "staging");
@@ -77,21 +77,20 @@ export async function createPhotoRecord(input: {
   sizeBytes: number;
   storageProvider: string;
 }) {
-  const result = await getDb()
-    .prepare(
-      `INSERT INTO photo_uploads
-        (public_id, original_filename, mime_type, size_bytes, storage_provider, status)
-       VALUES (@public_id, @original_filename, @mime_type, @size_bytes, @storage_provider, 'received')
-       RETURNING id`,
-    )
-    .run({
-      public_id: input.publicId,
-      original_filename: input.filename.slice(0, 200),
-      mime_type: input.mimeType,
-      size_bytes: input.sizeBytes,
-      storage_provider: input.storageProvider,
-    });
-  return Number(result.rows[0]?.id);
+  const [row] = await sql<{ id: number }>(
+    `INSERT INTO photo_uploads
+      (public_id, original_filename, mime_type, size_bytes, storage_provider, status)
+     VALUES ($1, $2, $3, $4, $5, 'received')
+     RETURNING id`,
+    [
+      input.publicId,
+      input.filename.slice(0, 200),
+      input.mimeType,
+      input.sizeBytes,
+      input.storageProvider,
+    ],
+  );
+  return row.id;
 }
 
 async function stage(publicId: string, extension: string, buffer: Buffer) {
@@ -128,24 +127,22 @@ const EXTENSION_BY_MIME: Record<string, string> = {
 };
 
 export async function pushToStorage(photo: PhotoUpload, buffer: Buffer) {
-  const storage = getPhotoStorage();
-  const db = getDb();
+  const storage = await getPhotoStorage();
 
   let stagingKey: string | null = null;
   if (storage.name !== "local") {
     try {
       stagingKey = await stage(photo.public_id, EXTENSION_BY_MIME[photo.mime_type] ?? ".jpg", buffer);
-      await db
-        .prepare(
-          `UPDATE photo_uploads SET staging_key = ?, status = 'uploading', error = NULL WHERE id = ?`,
-        )
-        .run(stagingKey, photo.id);
+      await run(
+        `UPDATE photo_uploads SET staging_key = $1, status = 'uploading', error = NULL WHERE id = $2`,
+        [stagingKey, photo.id],
+      );
     } catch {
       stagingKey = null;
-      await db.prepare(`UPDATE photo_uploads SET status = 'uploading' WHERE id = ?`).run(photo.id);
+      await run(`UPDATE photo_uploads SET status = 'uploading' WHERE id = $1`, [photo.id]);
     }
   } else {
-    await db.prepare(`UPDATE photo_uploads SET status = 'uploading' WHERE id = ?`).run(photo.id);
+    await run(`UPDATE photo_uploads SET status = 'uploading' WHERE id = $1`, [photo.id]);
   }
 
   try {
@@ -155,29 +152,29 @@ export async function pushToStorage(photo: PhotoUpload, buffer: Buffer) {
       filename: photo.original_filename,
       publicId: photo.public_id,
     });
-    await db
-      .prepare(
-        `UPDATE photo_uploads
-         SET status = 'uploaded', storage_key = ?, external_id = ?, staging_key = NULL,
-             uploaded_at = now(), error = NULL
-         WHERE id = ?`,
-      )
-      .run(stored.key, stored.externalId, photo.id);
+    await run(
+      `UPDATE photo_uploads
+       SET status = 'uploaded', storage_key = $1, external_id = $2, staging_key = NULL,
+           uploaded_at = now(), error = NULL
+       WHERE id = $3`,
+      [stored.key, stored.externalId, photo.id],
+    );
     await dropStaged(stagingKey);
     return true;
   } catch (error) {
     const message = (error as Error).message.slice(0, 300);
-    await db
-      .prepare(`UPDATE photo_uploads SET status = 'failed', staging_key = ?, error = ? WHERE id = ?`)
-      .run(stagingKey, message, photo.id);
+    await run(
+      `UPDATE photo_uploads SET status = 'failed', staging_key = $1, error = $2 WHERE id = $3`,
+      [stagingKey, message, photo.id],
+    );
     return false;
   }
 }
 
 export async function retryFailedPhoto(publicId: string) {
-  const photo = await getDb()
-    .prepare<[string], PhotoUpload>(`SELECT * FROM photo_uploads WHERE public_id = ?`)
-    .get(publicId);
+  const [photo] = await sql<PhotoUpload>(`SELECT * FROM photo_uploads WHERE public_id = $1`, [
+    publicId,
+  ]);
   if (!photo || !photo.staging_key) return { ok: false, message: "Sem cópia local para reprocessar." };
   const buffer = await readStaged(photo.staging_key);
   if (!buffer) return { ok: false, message: "Cópia temporária não encontrada." };

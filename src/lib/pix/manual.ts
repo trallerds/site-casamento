@@ -46,15 +46,13 @@ export const manualPixProvider: PixProvider = {
   },
 
   async health() {
-    const key = await pixKey();
-    if (key) {
+    if (await pixKey()) {
       return {
         ok: true,
         message: "Chave Pix com valor já preenchido por presente. A confirmação é manual no painel.",
       };
     }
-    const staticPay = await staticPayload();
-    if (staticPay) {
+    if (await staticPayload()) {
       return {
         ok: true,
         message:

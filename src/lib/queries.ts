@@ -1,4 +1,4 @@
-import { getDb, type Gift, type Payment, type PhotoUpload } from "@/lib/db";
+import { sql, type Gift, type Payment, type PhotoUpload } from "@/lib/db";
 
 export type GiftRow = Gift;
 export type PaymentRow = Payment;
@@ -29,13 +29,11 @@ export type StatsRow = {
 export type PaymentJoinedRow = Payment & { gift_name: string; gift_slug: string };
 
 export async function listActiveGifts() {
-  return getDb()
-    .prepare<[], GiftRow>(
-      `SELECT * FROM gifts
-       WHERE active = 1 AND total_quantity - sold_quantity > 0
-       ORDER BY display_order ASC, id ASC`,
-    )
-    .all();
+  return sql<GiftRow>(
+    `SELECT * FROM gifts
+     WHERE active = 1 AND total_quantity - sold_quantity > 0
+     ORDER BY display_order ASC, id ASC`,
+  );
 }
 
 export function isGiftAvailable(gift: GiftRow) {
@@ -43,15 +41,12 @@ export function isGiftAvailable(gift: GiftRow) {
 }
 
 export async function listAllGifts() {
-  return getDb()
-    .prepare<[], GiftRow>(`SELECT * FROM gifts ORDER BY display_order ASC, id ASC`)
-    .all();
+  return sql<GiftRow>(`SELECT * FROM gifts ORDER BY display_order ASC, id ASC`);
 }
 
 export async function listGiftsGrouped() {
-  const gifts = await listActiveGifts();
   const groups = new Map<string, GiftRow[]>();
-  for (const gift of gifts) {
+  for (const gift of await listActiveGifts()) {
     const list = groups.get(gift.category) ?? [];
     list.push(gift);
     groups.set(gift.category, list);
@@ -60,65 +55,60 @@ export async function listGiftsGrouped() {
 }
 
 export async function findGiftBySlug(slug: string) {
-  return getDb()
-    .prepare<[string], GiftRow>(`SELECT * FROM gifts WHERE slug = ?`)
-    .get(slug);
+  const [row] = await sql<GiftRow>(`SELECT * FROM gifts WHERE slug = $1`, [slug]);
+  return row;
 }
 
 export async function findGiftById(id: number) {
-  return getDb()
-    .prepare<[number], GiftRow>(`SELECT * FROM gifts WHERE id = ?`)
-    .get(id);
+  const [row] = await sql<GiftRow>(`SELECT * FROM gifts WHERE id = $1`, [id]);
+  return row;
 }
 
 export async function findPaymentByPublicId(publicId: string) {
-  return getDb()
-    .prepare<[string], PaymentRow>(`SELECT * FROM payments WHERE public_id = ?`)
-    .get(publicId);
+  const [row] = await sql<PaymentRow>(`SELECT * FROM payments WHERE public_id = $1`, [publicId]);
+  return row;
 }
 
 export async function findPaymentByProviderChargeId(providerChargeId: string) {
-  return getDb()
-    .prepare<[string], PaymentRow>(`SELECT * FROM payments WHERE provider_charge_id = ?`)
-    .get(providerChargeId);
+  const [row] = await sql<PaymentRow>(
+    `SELECT * FROM payments WHERE provider_charge_id = $1`,
+    [providerChargeId],
+  );
+  return row;
 }
 
 export async function giftPaymentTotals() {
-  return getDb()
-    .prepare<[], GiftTotalsRow>(`
-      SELECT g.id AS gift_id,
-             g.name AS name,
-             g.slug AS slug,
-             g.amount_cents AS amount_cents,
-             g.active AS active,
-             g.total_quantity AS total_quantity,
-             g.sold_quantity AS sold_quantity,
-             COUNT(p.id) AS contributions,
-             COALESCE(SUM(CASE WHEN p.status = 'paid' THEN p.amount_cents ELSE 0 END), 0) AS paid_cents,
-             COALESCE(SUM(CASE WHEN p.status = 'pending' THEN 1 ELSE 0 END), 0) AS pending_count
-      FROM gifts g
-      LEFT JOIN payments p ON p.gift_id = g.id
-      GROUP BY g.id
-      ORDER BY g.display_order ASC, g.id ASC
-    `)
-    .all();
+  return sql<GiftTotalsRow>(`
+    SELECT g.id AS gift_id,
+           g.name AS name,
+           g.slug AS slug,
+           g.amount_cents AS amount_cents,
+           g.active AS active,
+           g.total_quantity AS total_quantity,
+           g.sold_quantity AS sold_quantity,
+           COUNT(p.id) AS contributions,
+           COALESCE(SUM(CASE WHEN p.status = 'paid' THEN p.amount_cents ELSE 0 END), 0) AS paid_cents,
+           COALESCE(SUM(CASE WHEN p.status = 'pending' THEN 1 ELSE 0 END), 0) AS pending_count
+    FROM gifts g
+    LEFT JOIN payments p ON p.gift_id = g.id
+    GROUP BY g.id
+    ORDER BY g.display_order ASC, g.id ASC
+  `);
 }
 
 export async function dashboardStats(): Promise<StatsRow> {
-  const row = await getDb()
-    .prepare<[], StatsRow>(`
-      SELECT
-        (SELECT COUNT(*) FROM photo_uploads WHERE hidden = 0) AS photos_total,
-        (SELECT COUNT(*) FROM photo_uploads WHERE hidden = 0 AND status = 'uploaded') AS photos_uploaded,
-        (SELECT COUNT(*) FROM photo_uploads WHERE hidden = 0 AND status = 'failed') AS photos_failed,
-        (SELECT COUNT(*) FROM payments WHERE status = 'paid') AS payments_paid,
-        (SELECT COUNT(*) FROM payments WHERE status = 'pending') AS payments_pending,
-        (SELECT COUNT(*) FROM gifts WHERE total_quantity - sold_quantity <= 0) AS gifts_sold_out,
-        (SELECT COUNT(*) FROM payments WHERE oversold = 1) AS payments_oversold,
-        (SELECT COUNT(*) FROM payments WHERE claimed_at IS NOT NULL AND status != 'paid') AS payments_unreconciled,
-        (SELECT COALESCE(SUM(amount_cents), 0) FROM payments WHERE status = 'paid') AS paid_cents
-    `)
-    .get();
+  const [row] = await sql<StatsRow>(`
+    SELECT
+      (SELECT COUNT(*) FROM photo_uploads WHERE hidden = 0) AS photos_total,
+      (SELECT COUNT(*) FROM photo_uploads WHERE hidden = 0 AND status = 'uploaded') AS photos_uploaded,
+      (SELECT COUNT(*) FROM photo_uploads WHERE hidden = 0 AND status = 'failed') AS photos_failed,
+      (SELECT COUNT(*) FROM payments WHERE status = 'paid') AS payments_paid,
+      (SELECT COUNT(*) FROM payments WHERE status = 'pending') AS payments_pending,
+      (SELECT COUNT(*) FROM gifts WHERE total_quantity - sold_quantity <= 0) AS gifts_sold_out,
+      (SELECT COUNT(*) FROM payments WHERE oversold = 1) AS payments_oversold,
+      (SELECT COUNT(*) FROM payments WHERE claimed_at IS NOT NULL AND status != 'paid') AS payments_unreconciled,
+      (SELECT COALESCE(SUM(amount_cents), 0) FROM payments WHERE status = 'paid') AS paid_cents
+  `);
 
   return (
     row ?? {
@@ -136,21 +126,19 @@ export async function dashboardStats(): Promise<StatsRow> {
 }
 
 export async function listPayments(limit = 200) {
-  return getDb()
-    .prepare<[number], PaymentJoinedRow>(
-      `SELECT p.*, g.name AS gift_name, g.slug AS gift_slug
-       FROM payments p
-       JOIN gifts g ON g.id = p.gift_id
-       ORDER BY p.id DESC
-       LIMIT ?`,
-    )
-    .all(limit);
+  return sql<PaymentJoinedRow>(
+    `SELECT p.*, g.name AS gift_name, g.slug AS gift_slug
+     FROM payments p
+     JOIN gifts g ON g.id = p.gift_id
+     ORDER BY p.id DESC
+     LIMIT $1`,
+    [limit],
+  );
 }
 
 export async function listPhotos(limit = 200) {
-  return getDb()
-    .prepare<[number], PhotoRow>(
-      `SELECT * FROM photo_uploads WHERE hidden = 0 ORDER BY id DESC LIMIT ?`,
-    )
-    .all(limit);
+  return sql<PhotoRow>(
+    `SELECT * FROM photo_uploads WHERE hidden = 0 ORDER BY id DESC LIMIT $1`,
+    [limit],
+  );
 }

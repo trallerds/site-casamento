@@ -13,22 +13,25 @@ type DriveConfig = {
 };
 
 async function readConfig(): Promise<DriveConfig> {
-  const stored = (() => {
-    const raw = getSetting("google_drive_config");
-    if (!raw) return {} as Partial<DriveConfig>;
+  const raw = await getSetting("google_drive_config");
+  let stored: Partial<DriveConfig> = {};
+  if (raw) {
     try {
-      return JSON.parse(raw) as Partial<DriveConfig>;
+      stored = JSON.parse(raw) as Partial<DriveConfig>;
     } catch {
-      return {} as Partial<DriveConfig>;
+      stored = {};
     }
-  })();
+  }
 
   return {
     clientId: stored.clientId || process.env.GOOGLE_CLIENT_ID || "",
     clientSecret: stored.clientSecret || process.env.GOOGLE_CLIENT_SECRET || "",
     refreshToken: stored.refreshToken || process.env.GOOGLE_REFRESH_TOKEN || "",
     folderId:
-      stored.folderId || (await getSetting("google_drive_folder_id")) || process.env.GOOGLE_DRIVE_FOLDER_ID || "",
+      stored.folderId ||
+      (await getSetting("google_drive_folder_id")) ||
+      process.env.GOOGLE_DRIVE_FOLDER_ID ||
+      "",
   };
 }
 

@@ -8,8 +8,8 @@ const NAV = [
   { href: "/fotos", label: "Fotos", icon: CameraIcon },
 ];
 
-export function SiteHeader() {
-  const names = weddingNames();
+export async function SiteHeader() {
+  const names = await weddingNames();
   return (
     <header className="mx-auto w-full max-w-5xl px-5 pt-6 md:px-8">
       <div className="flex items-center justify-between gap-4">

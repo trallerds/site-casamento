@@ -1,4 +1,4 @@
-import { getDb, type PhotoUpload } from "@/lib/db";
+import { sql, type PhotoUpload } from "@/lib/db";
 import { randomId } from "@/lib/format";
 import {
   createPhotoRecord,
@@ -48,12 +48,10 @@ export async function POST(request: Request) {
     filename: file.name || "foto.jpg",
     mimeType: validated.mimeType,
     sizeBytes: validated.buffer.byteLength,
-    storageProvider: photoStorageName(),
+    storageProvider: await photoStorageName(),
   });
 
-  const photo = await getDb()
-    .prepare<[number], PhotoUpload>(`SELECT * FROM photo_uploads WHERE id = ?`)
-    .get(recordId);
+  const [photo] = await sql<PhotoUpload>(`SELECT * FROM photo_uploads WHERE id = $1`, [recordId]);
 
   if (!photo) {
     return Response.json({ error: "Falha ao registrar a foto." }, { status: 500 });

@@ -10,7 +10,7 @@ import {
   setSessionCookie,
   verifyAdminPassword,
 } from "@/lib/auth";
-import { getDb } from "@/lib/db";
+import { run, sql } from "@/lib/db";
 import { parseAmountToCents, slugify } from "@/lib/format";
 import { markPaymentPaid } from "@/lib/payments";
 import { retryFailedPhoto } from "@/lib/photos";
@@ -42,9 +42,9 @@ async function requireAdmin() {
 }
 
 async function getGiftSold(giftId: number) {
-  const row = await getDb()
-    .prepare<[number], { sold: number }>(`SELECT sold_quantity AS sold FROM gifts WHERE id = ?`)
-    .get(giftId);
+  const [row] = await sql<{ sold: number }>(`SELECT sold_quantity AS sold FROM gifts WHERE id = $1`, [
+    giftId,
+  ]);
   return row?.sold ?? 0;
 }
 
@@ -69,16 +69,13 @@ export async function saveGiftAction(formData: FormData) {
     redirect("/admin/presentes?erro=nome-valor");
   }
 
-  const db = getDb();
   if (id) {
-    await db
-      .prepare(
-        `UPDATE gifts
-         SET name = ?, description = ?, amount_cents = ?, category = ?, image_key = ?,
-             display_order = ?, total_quantity = ?, active = ?, updated_at = now()
-         WHERE id = ?`,
-      )
-      .run(
+    await run(
+      `UPDATE gifts
+       SET name = $1, description = $2, amount_cents = $3, category = $4, image_key = $5,
+           display_order = $6, total_quantity = $7, active = $8, updated_at = now()
+       WHERE id = $9`,
+      [
         name,
         description,
         amountCents ?? 0,
@@ -88,22 +85,21 @@ export async function saveGiftAction(formData: FormData) {
         Math.max(totalQuantity, await getGiftSold(id)),
         active,
         id,
-      );
+      ],
+    );
   } else {
     const base = slugify(name) || `presente-${Date.now()}`;
     let slug = base;
     let suffix = 2;
-    while (await db.prepare(`SELECT 1 FROM gifts WHERE slug = ?`).get(slug)) {
+    while ((await sql(`SELECT 1 FROM gifts WHERE slug = $1`, [slug])).length > 0) {
       slug = `${base}-${suffix}`;
       suffix += 1;
     }
-    await db
-      .prepare(
-        `INSERT INTO gifts
-           (slug, name, description, image_key, amount_cents, category, display_order, total_quantity, active)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
+    await run(
+      `INSERT INTO gifts
+        (slug, name, description, image_key, amount_cents, category, display_order, total_quantity, active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
         slug,
         name,
         description,
@@ -113,7 +109,8 @@ export async function saveGiftAction(formData: FormData) {
         displayOrder,
         totalQuantity,
         active,
-      );
+      ],
+    );
   }
 
   revalidatePath("/admin/presentes");
@@ -126,9 +123,10 @@ export async function toggleGiftAction(formData: FormData) {
   await requireAdmin();
   const id = Number(field(formData, "id"));
   if (!id) return;
-  await getDb()
-    .prepare(`UPDATE gifts SET active = CASE active WHEN 1 THEN 0 ELSE 1 END, updated_at = now() WHERE id = ?`)
-    .run(id);
+  await run(
+    `UPDATE gifts SET active = CASE active WHEN 1 THEN 0 ELSE 1 END, updated_at = now() WHERE id = $1`,
+    [id],
+  );
   revalidatePath("/admin/presentes");
   revalidatePath("/presentes");
 }
@@ -137,11 +135,10 @@ export async function confirmPaymentAction(formData: FormData) {
   await requireAdmin();
   const id = Number(field(formData, "id"));
   if (!id) return;
-  const payment = await getDb()
-    .prepare<[number], { gift_id: number; status: string }>(
-      `SELECT gift_id, status FROM payments WHERE id = ?`,
-    )
-    .get(id);
+  const [payment] = await sql<{ gift_id: number; status: string }>(
+    `SELECT gift_id, status FROM payments WHERE id = $1`,
+    [id],
+  );
   if (!payment || payment.status === "paid") return;
   await markPaymentPaid({
     paymentId: id,
@@ -149,7 +146,7 @@ export async function confirmPaymentAction(formData: FormData) {
     eventType: "manual.confirmed",
     payload: "confirmado no painel",
   });
-  await getDb().prepare(`UPDATE payments SET confirmed_by_admin = 1 WHERE id = ?`).run(id);
+  await run(`UPDATE payments SET confirmed_by_admin = 1 WHERE id = $1`, [id]);
   revalidatePath("/admin/pagamentos");
   revalidatePath("/admin");
   revalidatePath("/presentes");
@@ -159,9 +156,7 @@ export async function cancelPaymentAction(formData: FormData) {
   await requireAdmin();
   const id = Number(field(formData, "id"));
   if (!id) return;
-  await getDb()
-    .prepare(`UPDATE payments SET status = 'cancelled', updated_at = now() WHERE id = ?`)
-    .run(id);
+  await run(`UPDATE payments SET status = 'cancelled', updated_at = now() WHERE id = $1`, [id]);
   revalidatePath("/admin/pagamentos");
   revalidatePath("/admin");
 }
@@ -170,7 +165,7 @@ export async function hidePhotoAction(formData: FormData) {
   await requireAdmin();
   const publicId = field(formData, "public_id");
   if (!publicId) return;
-  await getDb().prepare(`UPDATE photo_uploads SET hidden = 1 WHERE public_id = ?`).run(publicId);
+  await run(`UPDATE photo_uploads SET hidden = 1 WHERE public_id = $1`, [publicId]);
   revalidatePath("/admin/fotos");
   revalidatePath("/admin");
 }

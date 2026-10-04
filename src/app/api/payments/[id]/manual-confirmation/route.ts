@@ -1,4 +1,4 @@
-import { getDb } from "@/lib/db";
+import { run } from "@/lib/db";
 import { findPaymentByPublicId } from "@/lib/queries";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
@@ -15,12 +15,11 @@ export async function POST(
   const payment = await findPaymentByPublicId(id);
   if (!payment) return Response.json({ error: "Cobrança não encontrada." }, { status: 404 });
 
-  await getDb()
-    .prepare(
-      `UPDATE payments SET claimed_at = COALESCE(claimed_at, now()), updated_at = now()
-       WHERE id = ?`,
-    )
-    .run(payment.id);
+  await run(
+    `UPDATE payments SET claimed_at = COALESCE(claimed_at, now()), updated_at = now()
+     WHERE id = $1`,
+    [payment.id],
+  );
 
   return Response.json({ registered: true, status: payment.status });
 }

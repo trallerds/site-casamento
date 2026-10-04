@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
-import { getDb } from "@/lib/db";
+import { run, sql } from "@/lib/db";
 
 const COOKIE_NAME = "deixa_aqui_admin";
 const SESSION_DAYS = 7;
@@ -30,18 +30,19 @@ export async function createAdminSession() {
   const token = crypto.randomBytes(32).toString("base64url");
   const tokenHash = hashSecret(token);
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  await getDb()
-    .prepare(`INSERT INTO admin_sessions (token_hash, expires_at) VALUES (?, ?)`)
-    .run(tokenHash, expiresAt.toISOString());
+  await run(`INSERT INTO admin_sessions (token_hash, expires_at) VALUES ($1, $2)`, [
+    tokenHash,
+    expiresAt.toISOString(),
+  ]);
   return { token, expiresAt };
 }
 
 export async function deleteAdminSession(token: string) {
-  await getDb().prepare(`DELETE FROM admin_sessions WHERE token_hash = ?`).run(hashSecret(token));
+  await run(`DELETE FROM admin_sessions WHERE token_hash = $1`, [hashSecret(token)]);
 }
 
 export async function purgeExpiredSessions() {
-  await getDb().prepare(`DELETE FROM admin_sessions WHERE expires_at < now()`).run();
+  await run(`DELETE FROM admin_sessions WHERE expires_at < now()`);
 }
 
 export async function getAdminSessionToken() {
@@ -53,11 +54,10 @@ export async function isAuthenticated() {
   if (!isAdminEnabled()) return false;
   const token = await getAdminSessionToken();
   if (!token) return false;
-  const row = await getDb()
-    .prepare<[string], { expires_at: string }>(
-      `SELECT expires_at FROM admin_sessions WHERE token_hash = ?`,
-    )
-    .get(hashSecret(token));
+  const [row] = await sql<{ expires_at: string }>(
+    `SELECT expires_at FROM admin_sessions WHERE token_hash = $1`,
+    [hashSecret(token)],
+  );
   if (!row) return false;
   return new Date(row.expires_at).getTime() > Date.now();
 }
@@ -75,7 +75,7 @@ export async function setSessionCookie(token: string, expiresAt: Date) {
 
 export async function clearSessionCookie() {
   const token = await getAdminSessionToken();
-  if (token) await deleteAdminSession(token);
+  if (token) deleteAdminSession(token);
   const store = await cookies();
   store.set(COOKIE_NAME, "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
 }
