@@ -1,26 +1,21 @@
-import { getDb } from "@/lib/db";
+import { run, sql } from "@/lib/db";
 
-export function getSetting(key: string): string | null {
-  const row = getDb()
-    .prepare<[string], { value: string }>(`SELECT value FROM settings WHERE key = ?`)
-    .get(key);
+export async function getSetting(key: string): Promise<string | null> {
+  const [row] = await sql<{ value: string }>(`SELECT value FROM settings WHERE key = $1`, [key]);
   return row?.value ?? null;
 }
 
-export function getSettings(): Record<string, string> {
-  const rows = getDb()
-    .prepare<[], { key: string; value: string }>(`SELECT key, value FROM settings`)
-    .all();
+export async function getSettings(): Promise<Record<string, string>> {
+  const rows = await sql<{ key: string; value: string }>(`SELECT key, value FROM settings`);
   return Object.fromEntries(rows.map((row) => [row.key, row.value]));
 }
 
-export function setSetting(key: string, value: string) {
-  getDb()
-    .prepare(
-      `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
-       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
-    )
-    .run(key, value);
+export async function setSetting(key: string, value: string) {
+  await run(
+    `INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, now())
+     ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = now()`,
+    [key, value],
+  );
 }
 
 export const SETTING_KEYS = [
@@ -42,16 +37,16 @@ export const SETTING_KEYS = [
 
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
-export function weddingNames() {
-  return getSetting("wedding_names") || process.env.WEDDING_NAMES || "Jéssica & Jennifer";
+export async function weddingNames() {
+  return (await getSetting("wedding_names")) || process.env.WEDDING_NAMES || "Jéssica & Jennifer";
 }
 
-export function weddingDate() {
-  return getSetting("wedding_date") || process.env.WEDDING_DATE || "";
+export async function weddingDate() {
+  return (await getSetting("wedding_date")) || process.env.WEDDING_DATE || "";
 }
 
-export function weddingDateLabel() {
-  const raw = weddingDate();
+export async function weddingDateLabel() {
+  const raw = await weddingDate();
   if (!raw) return "";
   const date = new Date(`${raw}T12:00:00`);
   if (Number.isNaN(date.getTime())) return raw;

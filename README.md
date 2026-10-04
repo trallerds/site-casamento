@@ -23,7 +23,7 @@ enviadas direto do celular para o Google Drive das noivas. Mobile first, sem cad
 | ------------- | ------------------------------ | ---------------------------------------------------- |
 | Frontend      | Next.js 15 (App Router) + TS   | rotas server, câmera, deploy simples                  |
 | Estilo        | Tailwind CSS v4                | mobile first e tokens de cor da identidade             |
-| Banco         | SQLite (`better-sqlite3`)      | zero configuração; espelha as tabelas da spec         |
+| Banco         | Postgres (Neon) + `pg`         | serverless-safe; sem disco, funiona na Vercel         |
 | Pix           | adapter (manual \| OpenPix)    | trocar provedor sem tocar nas rotas                    |
 | Fotos         | adapter (local \| Google Drive)| trocar destino sem tocar nas rotas                     |
 | Admin         | sessão própria + server actions| sem dependência externa de autenticação                |
@@ -36,7 +36,8 @@ cp .env.example .env.local
 npm run dev
 ```
 
-O banco é criado e populado com 11 presentes de exemplo no primeiro acesso (`data/deixa-aqui.db`).
+O schema é criado e populado com 11 presentes de exemplo no primeiro acesso. Defina `DATABASE_URL`
+no `.env.local` ( Neon Postgres ) antes de rodar.
 
 ### 1. Ativar a área das noivas
 
@@ -91,27 +92,20 @@ caminho suportado é OAuth da conta humana proprietária da pasta.
 
 ## Publicar
 
-### Atenção: Vercel não serve para esta versão
+A Vercel está configurada e o app roda lá. O banco é Postgres (Neon) justamente por isso: o
+filesystem da função é somente leitura e descartado a cada deploy, então nada de estado em disco.
 
-O banco atual é **SQLite em arquivo** (`data/deixa-aqui.db`) e o armazenamento local de fotos usa
-`data/uploads`. Na Vercel o sistema de arquivos da função é somente leitura e descartado a cada
-deploy: o site subiria, mas **todo presente, pagamento e foto seria perdido** a cada build, e o
-`mkdir` de `data/` quebraria as requisições.
+O que ainda exige atenção no ambiente serverless:
 
-Duas saídas:
+- `DATABASE_URL` (string de conexão do Neon) é obrigatório nas variáveis da Vercel;
+- `PHOTO_STORAGE=drive` e as credenciais do Drive: **não há disco**, então as fotos obrigatoriamente
+  precisam ir para o Google Drive;
+- `PIX_PROVIDER=openpix` + `OPENPIX_WEBHOOK_TOKEN` se quiser confirmação automática;
+- `NEXT_PUBLIC_SITE_URL` com o domínio real (usado nas URLs de confirmação);
+- **HTTPS é obrigatório**: a câmera do navegador não funciona em contexto inseguro.
 
-**A. Migrar o banco para Postgres (permite Vercel).** Supabase, Neon ou qualquer Postgres
-gerenciado. Envolve trocar o driver e a camada de acesso; o resto do site (rotas, componentes,
-adapters de Pix e Drive) continua igual. É o caminho se a hospedagem definite for Vercel.
-
-**B. Hospedar com disco persistente.** Render, Railway, Fly.io ou uma VPS: o código atual sobe sem
-nenhuma mudança, com `data/` em disco persistente. `npm run build` gera `.next-build`, e `npm start`
-seta a mesma variável, então o deploy precisa de:
-
-```
-NODE_VERSION=20
-# npm run build && npm start
-```
+Se um dia a hospedagem voltar a ter disco persistente (Render, Railway, Fly.io, VPS), o código atual
+sobe sem mudança nenhuma.
 
 ### Em qualquer hospedagem
 
@@ -135,7 +129,7 @@ src/
     api/                         payments, photos, webhooks/pix
   components/                    UI, camera, copia do Pix, QR
   lib/
-    db.ts                        schema + seed
+    db.ts                        pool, schema, seed, sql/run/tx
     queries.ts                   leituras
     payments.ts                  criacao de cobranca e idempotencia
     photos.ts                    validacao e upload com staging/retry
@@ -164,5 +158,5 @@ npm run lint           # ESLint
 npm run typecheck      # TypeScript
 npm run admin:password -- "senha"
 npm run drive:auth     # OAuth do Google Drive
-npm run db:reset       # apaga o banco e recomeça
-```# site-casamento
+npm run db:reset       # apaga data/uploads e recomeça
+```

@@ -1,4 +1,4 @@
-import { getDb } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { retryFailedPhoto } from "@/lib/photos";
 import { isAuthenticated } from "@/lib/auth";
 
@@ -9,11 +9,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const photo = getDb()
-    .prepare<[string], { status: string; error: string | null }>(
-      `SELECT status, error FROM photo_uploads WHERE public_id = ?`,
-    )
-    .get(id);
+  const [photo] = await sql<{ status: string; error: string | null }>(
+    `SELECT status, error FROM photo_uploads WHERE public_id = $1`,
+    [id],
+  );
 
   if (!photo) return Response.json({ error: "Foto não encontrada." }, { status: 404 });
 

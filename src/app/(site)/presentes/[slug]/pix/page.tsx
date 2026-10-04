@@ -21,8 +21,8 @@ export default async function PixPage({
   searchParams: Promise<{ p?: string }>;
 }) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
-  const gift = findGiftBySlug(slug);
-  const payment = query.p ? findPaymentByPublicId(query.p) : undefined;
+  const gift = await findGiftBySlug(slug);
+  const payment = query.p ? await findPaymentByPublicId(query.p) : undefined;
 
   if (!gift) notFound();
   if (!payment || payment.gift_id !== gift.id) {

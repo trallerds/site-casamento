@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { weddingNames } from "@/lib/settings";
 
-export function generateMetadata(): Metadata {
-  const names = weddingNames();
+export async function generateMetadata(): Promise<Metadata> {
+  const names = await weddingNames();
   return {
     title: {
       default: `${names} · Deixa Aqui`,
@@ -27,7 +27,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <body className="min-h-dvh bg-ivory">{children}</body>

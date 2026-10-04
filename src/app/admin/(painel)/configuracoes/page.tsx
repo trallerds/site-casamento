@@ -20,10 +20,11 @@ export default async function AdminSettingsPage({
   searchParams: Promise<{ salvo?: string }>;
 }) {
   const query = await searchParams;
-  const settings = getSettings();
+  const settings = await getSettings();
   const pix = await pixProviderHealth();
   const storage = await photoStorageHealth();
-  const drivePreview = photoStorageName() === "drive" ? null : await googleDriveStorage.health();
+  const drivePreview =
+    (await photoStorageName()) === "drive" ? null : await googleDriveStorage.health();
   const openpix = parseConfig(settings.pix_provider_config);
   const drive = parseConfig(settings.google_drive_config);
 
@@ -55,7 +56,7 @@ export default async function AdminSettingsPage({
           <SelectField
             label="Provedor"
             name="pix_provider"
-            defaultValue={pixProviderName()}
+            defaultValue={await pixProviderName()}
             options={[
               { value: "manual", label: "Chave Pix única (confirmação manual)" },
               { value: "openpix", label: "OpenPix (Pix dinâmico + webhook)" },
@@ -100,7 +101,7 @@ export default async function AdminSettingsPage({
           <SelectField
             label="Onde guardar"
             name="photo_storage"
-            defaultValue={photoStorageName()}
+            defaultValue={await photoStorageName()}
             options={[
               { value: "local", label: "Neste servidor (data/uploads)" },
               { value: "drive", label: "Google Drive das noivas" },

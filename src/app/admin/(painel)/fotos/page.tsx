@@ -12,7 +12,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function AdminPhotosPage() {
-  const photos = listPhotos();
+  const photos = await listPhotos();
 
   return (
     <div>

@@ -1,8 +1,10 @@
-import Database from "better-sqlite3";
-import fs from "node:fs";
-import path from "node:path";
+import { Pool, types, type PoolClient, type QueryResultRow } from "pg";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+// node-postgres devolve int8 (COUNT/SUM) como string e timestamptz como Date.
+// O app inteiro assume number e string ISO, entao os dois tipos sao fixados aqui.
+types.setTypeParser(20, (value) => Number(value));
+types.setTypeParser(1114, (value) => value);
+types.setTypeParser(1184, (value) => value);
 
 export type Gift = {
   id: number;
@@ -69,7 +71,7 @@ export type AdminSession = {
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS gifts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id BIGSERIAL PRIMARY KEY,
   slug TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
@@ -80,12 +82,12 @@ CREATE TABLE IF NOT EXISTS gifts (
   category TEXT NOT NULL DEFAULT 'Momentos da festa',
   display_order INTEGER NOT NULL DEFAULT 0,
   active INTEGER NOT NULL DEFAULT 1,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS payments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id BIGSERIAL PRIMARY KEY,
   public_id TEXT NOT NULL UNIQUE,
   gift_id INTEGER NOT NULL REFERENCES gifts(id),
   provider TEXT NOT NULL,
@@ -94,30 +96,30 @@ CREATE TABLE IF NOT EXISTS payments (
   status TEXT NOT NULL DEFAULT 'pending',
   pix_code TEXT,
   error TEXT,
-  expires_at TEXT,
-  paid_at TEXT,
-  claimed_at TEXT,
+  expires_at TIMESTAMPTZ,
+  paid_at TIMESTAMPTZ,
+  claimed_at TIMESTAMPTZ,
   confirmed_by_admin INTEGER NOT NULL DEFAULT 0,
   oversold INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS payments_gift_idx ON payments(gift_id);
 CREATE INDEX IF NOT EXISTS payments_status_idx ON payments(status);
 
 CREATE TABLE IF NOT EXISTS payment_events (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id BIGSERIAL PRIMARY KEY,
   payment_id INTEGER REFERENCES payments(id),
   provider_event_id TEXT NOT NULL UNIQUE,
   event_type TEXT NOT NULL,
   payload TEXT NOT NULL,
-  received_at TEXT NOT NULL DEFAULT (datetime('now')),
-  processed_at TEXT
+  received_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  processed_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS photo_uploads (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id BIGSERIAL PRIMARY KEY,
   public_id TEXT NOT NULL UNIQUE,
   original_filename TEXT NOT NULL,
   mime_type TEXT NOT NULL,
@@ -129,44 +131,23 @@ CREATE TABLE IF NOT EXISTS photo_uploads (
   status TEXT NOT NULL DEFAULT 'received',
   error TEXT,
   hidden INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  uploaded_at TEXT
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  uploaded_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS admin_sessions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id BIGSERIAL PRIMARY KEY,
   token_hash TEXT NOT NULL UNIQUE,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  expires_at TEXT NOT NULL
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL,
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 `;
-
-type GlobalWithDb = typeof globalThis & { __deixaAquiDb?: Database.Database };
-
-function createConnection() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  const database = new Database(path.join(DATA_DIR, "deixa-aqui.db"));
-  database.pragma("journal_mode = WAL");
-  database.pragma("foreign_keys = ON");
-  database.exec(SCHEMA);
-  migrate(database);
-  seed(database);
-  return database;
-}
-
-export function getDb(): Database.Database {
-  const scope = globalThis as GlobalWithDb;
-  if (!scope.__deixaAquiDb) {
-    scope.__deixaAquiDb = createConnection();
-  }
-  return scope.__deixaAquiDb;
-}
 
 type SeedGift = {
   slug: string;
@@ -293,48 +274,91 @@ const SEED_SETTINGS: Record<string, string> = {
   site_active: "1",
   photo_storage: process.env.PHOTO_STORAGE || "local",
   pix_provider: process.env.PIX_PROVIDER || "manual",
-  google_drive_folder_id: process.env.GOOGLE_DRIVE_FOLDER_ID || "1BxFLKSC8o0MezlAuuewodhnto1EMSz_o",
+  google_drive_folder_id:
+    process.env.GOOGLE_DRIVE_FOLDER_ID || "1BxFLKSC8o0MezlAuuewodhnto1EMSz_o",
 };
 
-function columnExists(database: Database.Database, table: string, column: string) {
-  const columns = database.pragma(`table_info(${table})`) as { name: string }[];
-  return columns.some((item) => item.name === column);
+type GlobalWithPool = typeof globalThis & { __deixaAquiPool?: Pool };
+
+export function pool(): Pool {
+  const scope = globalThis as GlobalWithPool;
+  if (!scope.__deixaAquiPool) {
+    scope.__deixaAquiPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: Number(process.env.DATABASE_POOL_MAX) || 4,
+      ssl: /neon\.tech/.test(process.env.DATABASE_URL ?? "") ? { rejectUnauthorized: false } : undefined,
+    });
+  }
+  return scope.__deixaAquiPool;
 }
 
-function migrate(database: Database.Database) {
-  const additions: [string, string, string][] = [
-    ["gifts", "total_quantity", "INTEGER NOT NULL DEFAULT 1"],
-    ["gifts", "sold_quantity", "INTEGER NOT NULL DEFAULT 0"],
-    ["payments", "oversold", "INTEGER NOT NULL DEFAULT 0"],
-  ];
-  for (const [table, column, definition] of additions) {
-    if (!columnExists(database, table, column)) {
-      database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
-    }
+async function seed(client: PoolClient) {
+  for (const [index, gift] of SEED_GIFTS.entries()) {
+    await client.query(
+      `INSERT INTO gifts
+         (slug, name, description, image_key, amount_cents, category, display_order, total_quantity)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (slug) DO NOTHING`,
+      [
+        gift.slug,
+        gift.name,
+        gift.description,
+        gift.image_key,
+        gift.amount_cents,
+        gift.category,
+        (index + 1) * 10,
+        gift.total_quantity ?? 1,
+      ],
+    );
+  }
+  for (const [key, value] of Object.entries(SEED_SETTINGS)) {
+    await client.query(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`,
+      [key, value],
+    );
   }
 }
 
-function seed(database: Database.Database) {
-  const insertGift = database.prepare(`
-    INSERT OR IGNORE INTO gifts
-      (slug, name, description, image_key, amount_cents, category, display_order, total_quantity)
-    VALUES (@slug, @name, @description, @image_key, @amount_cents, @category, @display_order, @total_quantity)
-  `);
-  const insertSetting = database.prepare(`
-    INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)
-  `);
+let ready: Promise<void> | undefined;
 
-  const run = database.transaction(() => {
-    SEED_GIFTS.forEach((gift, index) =>
-      insertGift.run({
-        ...gift,
-        total_quantity: gift.total_quantity ?? 1,
-        display_order: (index + 1) * 10,
-      }),
-    );
-    for (const [key, value] of Object.entries(SEED_SETTINGS)) {
-      insertSetting.run(key, value);
+function ensureSchema() {
+  ready ??= (async () => {
+    const client = await pool().connect();
+    try {
+      await client.query(SCHEMA);
+      await seed(client);
+    } finally {
+      client.release();
     }
-  });
-  run();
+  })();
+  return ready;
+}
+
+export async function sql<T extends QueryResultRow = QueryResultRow>(
+  text: string,
+  params: unknown[] = [],
+): Promise<T[]> {
+  await ensureSchema();
+  return (await pool().query<T>(text, params)).rows;
+}
+
+export async function run(text: string, params: unknown[] = []): Promise<number> {
+  await ensureSchema();
+  return (await pool().query(text, params)).rowCount ?? 0;
+}
+
+export async function tx<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  await ensureSchema();
+  const client = await pool().connect();
+  try {
+    await client.query("BEGIN");
+    const value = await fn(client);
+    await client.query("COMMIT");
+    return value;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }

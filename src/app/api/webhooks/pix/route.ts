@@ -6,7 +6,7 @@ import { randomId } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const provider = getPixProvider();
+  const provider = await getPixProvider();
   if (!provider.supportsWebhooks) {
     return Response.json({ error: "Webhook desativado neste provedor." }, { status: 404 });
   }
@@ -23,9 +23,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Não autorizado." }, { status: 401 });
   }
 
-  const payment = findPaymentByProviderChargeId(event.providerChargeId);
+  const payment = await findPaymentByProviderChargeId(event.providerChargeId);
   if (!payment) {
-    registerPaymentEvent({
+    await registerPaymentEvent({
       providerEventId: event.eventId || randomId(8),
       eventType: event.type,
       payload: rawBody.slice(0, 4000),
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
   const isPaid = event.type.toLowerCase().includes("paid") || Boolean(event.paidAt);
   if (!isPaid) {
-    registerPaymentEvent({
+    await registerPaymentEvent({
       providerEventId: event.eventId || randomId(8),
       eventType: event.type,
       payload: rawBody.slice(0, 4000),
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     return Response.json({ received: true, matched: true, applied: false });
   }
 
-  const result = markPaymentPaid({
+  const result = await markPaymentPaid({
     paymentId: payment.id,
     providerEventId: event.eventId || `${event.type}:${event.providerChargeId}`,
     eventType: event.type,

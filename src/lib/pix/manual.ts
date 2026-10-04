@@ -2,23 +2,23 @@ import { getSetting, weddingNames } from "@/lib/settings";
 import { buildBrCode } from "./brcode";
 import { PixError, type PixCharge, type PixChargeRequest, type PixEvent, type PixProvider } from "./types";
 
-function pixKey() {
-  return (getSetting("pix_key") || process.env.PIX_KEY || "").trim();
+async function pixKey() {
+  return ((await getSetting("pix_key")) || process.env.PIX_KEY || "").trim();
 }
 
-function staticPayload() {
-  return (getSetting("pix_key_payload") || process.env.PIX_KEY_PAYLOAD || "").trim();
+async function staticPayload() {
+  return ((await getSetting("pix_key_payload")) || process.env.PIX_KEY_PAYLOAD || "").trim();
 }
 
-function payloadFor(amountCents: number, txid: string) {
-  const key = pixKey();
+async function payloadFor(amountCents: number, txid: string) {
+  const key = await pixKey();
   if (key) {
     return buildBrCode({
       key,
-      recipientName: getSetting("pix_recipient_name") || weddingNames(),
+      recipientName: (await getSetting("pix_recipient_name")) || (await weddingNames()),
       amountCents,
       txid,
-      city: getSetting("pix_recipient_city") || "SAO PAULO",
+      city: (await getSetting("pix_recipient_city")) || "SAO PAULO",
     });
   }
   return staticPayload();
@@ -29,7 +29,7 @@ export const manualPixProvider: PixProvider = {
   supportsWebhooks: false,
 
   async createCharge(input: PixChargeRequest): Promise<PixCharge> {
-    const payload = payloadFor(input.amountCents, input.paymentPublicId);
+    const payload = await payloadFor(input.amountCents, input.paymentPublicId);
     if (!payload) {
       throw new PixError("Chave Pix não configurada. Defina pix_key no painel.", 503);
     }
@@ -46,13 +46,13 @@ export const manualPixProvider: PixProvider = {
   },
 
   async health() {
-    if (pixKey()) {
+    if (await pixKey()) {
       return {
         ok: true,
         message: "Chave Pix com valor já preenchido por presente. A confirmação é manual no painel.",
       };
     }
-    if (staticPayload()) {
+    if (await staticPayload()) {
       return {
         ok: true,
         message:

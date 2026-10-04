@@ -1,4 +1,4 @@
-import { getDb, type PhotoUpload } from "@/lib/db";
+import { sql, type PhotoUpload } from "@/lib/db";
 import { isAuthenticated, unauthorized } from "@/lib/auth";
 import { getPhotoStorage, isUnsafeStorageKey } from "@/lib/storage";
 
@@ -11,9 +11,7 @@ export async function GET(
   if (!(await isAuthenticated())) return unauthorized();
 
   const { id } = await params;
-  const photo = getDb()
-    .prepare<[string], PhotoUpload>(`SELECT * FROM photo_uploads WHERE public_id = ?`)
-    .get(id);
+  const [photo] = await sql<PhotoUpload>(`SELECT * FROM photo_uploads WHERE public_id = $1`, [id]);
 
   if (!photo || !photo.storage_key) {
     return Response.json({ error: "Arquivo não disponível." }, { status: 404 });
@@ -23,7 +21,7 @@ export async function GET(
     return Response.json({ error: "Caminho inválido." }, { status: 400 });
   }
 
-  const file = await getPhotoStorage().read(photo.storage_key);
+  const file = await (await getPhotoStorage()).read(photo.storage_key);
   if (!file) {
     return Response.json({ error: "Arquivo não encontrado no armazenamento." }, { status: 404 });
   }
