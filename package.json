@@ -1,0 +1,35 @@
+{
+  "name": "deixa-aqui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma web do casamento de Jessica & Jennifer: presentes via Pix e galeria de fotos no Google Drive.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "NEXT_DIST_DIR=.next-build next build",
+    "start": "NEXT_DIST_DIR=.next-build next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "db:reset": "rm -rf data && npm run dev",
+    "admin:password": "node scripts/hash.mjs",
+    "drive:auth": "node --env-file-if-exists=.env.local scripts/google-auth.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "next": "^15.1.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^15.1.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}
