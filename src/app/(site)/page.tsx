@@ -4,6 +4,8 @@ import { GiftCard } from "@/components/GiftCard";
 import { getSetting, weddingDateLabel, weddingNames } from "@/lib/settings";
 import { listActiveGifts } from "@/lib/queries";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const names = await weddingNames();
   const date = await weddingDateLabel();

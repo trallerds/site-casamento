@@ -292,10 +292,16 @@ type GlobalWithPool = typeof globalThis & { __deixaAquiPool?: Pool };
 export function pool(): Pool {
   const scope = globalThis as GlobalWithPool;
   if (!scope.__deixaAquiPool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error(
+        "DATABASE_URL ausente: defina a string de conexao do Neon (branch production) no ambiente.",
+      );
+    }
     scope.__deixaAquiPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       max: Number(process.env.DATABASE_POOL_MAX) || 4,
-      ssl: /neon\.tech/.test(process.env.DATABASE_URL ?? "") ? { rejectUnauthorized: false } : undefined,
+      ssl: /neon\.tech/.test(connectionString) ? { rejectUnauthorized: false } : undefined,
     });
   }
   return scope.__deixaAquiPool;
