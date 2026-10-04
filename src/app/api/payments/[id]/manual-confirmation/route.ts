@@ -8,7 +8,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const guard = rateLimit(`claim:${clientIp(request)}`, 20, 60 * 60 * 1000);
+  const guard = await rateLimit(`claim:${clientIp(request)}`, 20, 60 * 60 * 1000);
   if (!guard.allowed) return tooManyRequests(guard.retryAfterSeconds);
 
   const { id } = await params;
