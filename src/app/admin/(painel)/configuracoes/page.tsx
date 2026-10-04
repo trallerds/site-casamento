@@ -1,7 +1,7 @@
 import { saveSettingsAction } from "@/app/admin/actions";
 import { getSettings } from "@/lib/settings";
 import { pixProviderHealth, pixProviderName } from "@/lib/pix";
-import { googleDriveStorage, photoStorageHealth, photoStorageName } from "@/lib/storage";
+import { driveStorage, photoStorageHealth, photoStorageName } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function AdminSettingsPage({
   const pix = await pixProviderHealth();
   const storage = await photoStorageHealth();
   const drivePreview =
-    (await photoStorageName()) === "drive" ? null : await googleDriveStorage.health();
+    (await photoStorageName()) === "drive" ? null : await driveStorage().health();
   const openpix = parseConfig(settings.pix_provider_config);
   const drive = parseConfig(settings.google_drive_config);
 

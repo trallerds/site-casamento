@@ -142,6 +142,7 @@ describe("foto: retry", () => {
 });
 
 after(async () => {
+  await fs.rm(path.join(process.cwd(), "data", "staging"), { recursive: true, force: true });
   await run(`DELETE FROM photo_uploads WHERE public_id LIKE 'test-retry-%'`);
   await run(`DELETE FROM payment_events WHERE provider_event_id LIKE 'evt-%'`);
   await run(`DELETE FROM payments WHERE provider = 'test'`);

@@ -1,4 +1,5 @@
 import { getSetting } from "@/lib/settings";
+import { appsScriptStorage, isAppsScriptConfigured } from "./apps-script";
 import { googleDriveStorage, isDriveConfigured } from "./drive";
 import { localStorage } from "./local";
 import type { PhotoStorage } from "./types";
@@ -16,13 +17,18 @@ export async function photoStorageName() {
   return configured === "drive" ? "drive" : "local";
 }
 
+/** A ponte por Apps Script dispensa Google Cloud Console; sem ela, cai no OAuth. */
+export function driveStorage(): PhotoStorage {
+  return isAppsScriptConfigured() ? appsScriptStorage : googleDriveStorage;
+}
+
 export async function getPhotoStorage(): Promise<PhotoStorage> {
-  if ((await photoStorageName()) === "drive") return googleDriveStorage;
-  return localStorage;
+  if ((await photoStorageName()) !== "drive") return localStorage;
+  return driveStorage();
 }
 
 export async function photoStorageHealth() {
   return (await getPhotoStorage()).health();
 }
 
-export { googleDriveStorage, isDriveConfigured };
+export { appsScriptStorage, isAppsScriptConfigured, googleDriveStorage, isDriveConfigured };

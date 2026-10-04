@@ -12,6 +12,7 @@ data/*.db-journal
 data/*.db-wal
 data/*.db-shm
 data/uploads/
+data/staging/
 .vercel
 .env*
 .neon

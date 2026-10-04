@@ -70,25 +70,31 @@ O nome do recebedor é normalizado para ASCII e limitado a 25 caracteres, como p
 
 ### 3. Configurar o Google Drive
 
-Pasta de destino já apontada: `1BxFLKSC8o0MezlAuuewodhnto1EMSz_o`.
+Duas opções, sem misturar.
 
-1. Em https://console.cloud.google.com, crie um projeto e ative a **Google Drive API**.
-2. Crie credenciais **OAuth client ID** do tipo *Web application* e registre
-   `http://localhost:8787/oauth2callback` como URI de redirecionamento autorizado.
-3. Na tela de consentimento, adicione o e-mail da conta proprietária da pasta como usuário de teste.
-4. Exporte `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` e rode:
+**A. Ponte por Apps Script (recomendado).** Não precisa de Google Cloud Console, e o convidado
+nunca precisa de acesso à pasta.
 
-```bash
-npm run drive:auth
-```
+1. Em https://script.google.com, crie um projeto e cole `google-apps-script/Code.gs`.
+2. Confira o `FOLDER_ID` no topo do arquivo com a pasta de destino.
+3. **Deploy → New deployment → Web app**, com *Execute as: Me* e *Who has access: Anyone*.
+4. Copie a URL `/exec` para `GOOGLE_APPS_SCRIPT_URL` no ambiente e reinicie.
 
-O script abre o navegador, troca o código por um refresh token e grava as três credenciais em
-`.env.local`. Depois vá em **Configurações → Fotos**, troque “Onde guardar” para *Google Drive* e
-confirme em **Dashboard** que a integração está operacional.
+O Web App executa como a conta dona do script, então a autorização do Drive fica na conta das
+noivas. Quem envia a foto é o backend, nunca o convidado.
 
-Escopo usado: `https://www.googleapis.com/auth/drive`, porque o app precisa escrever dentro de uma
-pasta que já existe na conta de vocês. Conta pessoal `@gmail.com` não cria Shared Drive, então o
-caminho suportado é OAuth da conta humana proprietária da pasta.
+Limite conhecido: Web App do Apps Script consome a cota diária do script (90 min em conta
+`@gmail.com`) e aceita ~30 execuções simultâneas. Na prática aguenta a fotos da festa; se faltar,
+o destino alternativo é um bucket próprio.
+
+**B. OAuth direto.** Exige um projeto no Google Cloud Console com a Drive API habilitada. Use só
+se a opção A não servir — o código existe em `src/lib/storage/drive.ts` e é escolhido
+automaticamente quando `GOOGLE_APPS_SCRIPT_URL` está vazio.
+
+Pasta de destino: `1BxFLKSC8o0MezlAuuewodhnto1EMSz_o`.
+
+Nas duas opções a pasta pode (e deve) ficar **privada**. O sistema não usa permissão pública de
+link como mecanismo de autorização.
 
 ## Publicar
 
