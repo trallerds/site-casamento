@@ -9,6 +9,8 @@ export type GiftTotalsRow = {
   slug: string;
   amount_cents: number;
   active: number;
+  total_quantity: number;
+  sold_quantity: number;
   contributions: number;
   paid_cents: number;
   pending_count: number;
@@ -19,6 +21,8 @@ export type StatsRow = {
   photos_failed: number;
   payments_paid: number;
   payments_pending: number;
+  gifts_sold_out: number;
+  payments_oversold: number;
   payments_unreconciled: number;
   paid_cents: number;
 };
@@ -27,9 +31,15 @@ export type PaymentJoinedRow = Payment & { gift_name: string; gift_slug: string 
 export function listActiveGifts() {
   return getDb()
     .prepare<[], GiftRow>(
-      `SELECT * FROM gifts WHERE active = 1 ORDER BY display_order ASC, id ASC`,
+      `SELECT * FROM gifts
+       WHERE active = 1 AND total_quantity - sold_quantity > 0
+       ORDER BY display_order ASC, id ASC`,
     )
     .all();
+}
+
+export function isGiftAvailable(gift: GiftRow) {
+  return gift.active === 1 && gift.total_quantity - gift.sold_quantity > 0;
 }
 
 export function listAllGifts() {
@@ -80,6 +90,8 @@ export function giftPaymentTotals() {
              g.slug AS slug,
              g.amount_cents AS amount_cents,
              g.active AS active,
+             g.total_quantity AS total_quantity,
+             g.sold_quantity AS sold_quantity,
              COUNT(p.id) AS contributions,
              COALESCE(SUM(CASE WHEN p.status = 'paid' THEN p.amount_cents ELSE 0 END), 0) AS paid_cents,
              COALESCE(SUM(CASE WHEN p.status = 'pending' THEN 1 ELSE 0 END), 0) AS pending_count
@@ -100,6 +112,8 @@ export function dashboardStats(): StatsRow {
         (SELECT COUNT(*) FROM photo_uploads WHERE hidden = 0 AND status = 'failed') AS photos_failed,
         (SELECT COUNT(*) FROM payments WHERE status = 'paid') AS payments_paid,
         (SELECT COUNT(*) FROM payments WHERE status = 'pending') AS payments_pending,
+        (SELECT COUNT(*) FROM gifts WHERE total_quantity - sold_quantity <= 0) AS gifts_sold_out,
+        (SELECT COUNT(*) FROM payments WHERE oversold = 1) AS payments_oversold,
         (SELECT COUNT(*) FROM payments WHERE claimed_at IS NOT NULL AND status != 'paid') AS payments_unreconciled,
         (SELECT COALESCE(SUM(amount_cents), 0) FROM payments WHERE status = 'paid') AS paid_cents
     `)
@@ -112,6 +126,8 @@ export function dashboardStats(): StatsRow {
       photos_failed: 0,
       payments_paid: 0,
       payments_pending: 0,
+      gifts_sold_out: 0,
+      payments_oversold: 0,
       payments_unreconciled: 0,
       paid_cents: 0,
     }

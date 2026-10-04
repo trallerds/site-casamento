@@ -21,6 +21,11 @@ export default async function AdminDashboardPage() {
       value: String(stats.payments_unreconciled),
       hint: "convidados já disseram que pagaram",
     },
+    {
+      label: "Presentes esgotados",
+      value: String(stats.gifts_sold_out),
+      hint: `${stats.payments_oversold} pagamento(s) após o fim das cotas`,
+    },
   ];
 
   return (

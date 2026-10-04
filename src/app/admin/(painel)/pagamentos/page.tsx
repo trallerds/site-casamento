@@ -62,6 +62,11 @@ export default async function AdminPaymentsPage() {
                     {payment.claimed_at && payment.status !== "paid" ? (
                       <p className="mt-1 text-[0.65rem] text-gold-700">Convidado disse que pagou</p>
                     ) : null}
+                    {payment.oversold === 1 ? (
+                      <p className="mt-1 text-[0.65rem] font-medium text-navy-900">
+                        Pago depois das cotas acabarem — definir com o convidado
+                      </p>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3 text-xs text-navy-800/60">{formatDateTime(payment.created_at)}</td>
                   <td className="px-4 py-3 text-xs text-navy-800/60">{formatDateTime(payment.paid_at)}</td>

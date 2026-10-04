@@ -11,6 +11,8 @@ export type Gift = {
   description: string;
   image_key: string;
   amount_cents: number;
+  total_quantity: number;
+  sold_quantity: number;
   category: string;
   display_order: number;
   active: number;
@@ -34,6 +36,7 @@ export type Payment = {
   paid_at: string | null;
   claimed_at: string | null;
   confirmed_by_admin: number;
+  oversold: number;
   created_at: string;
   updated_at: string;
 };
@@ -72,6 +75,8 @@ CREATE TABLE IF NOT EXISTS gifts (
   description TEXT NOT NULL DEFAULT '',
   image_key TEXT NOT NULL DEFAULT 'default',
   amount_cents INTEGER NOT NULL CHECK (amount_cents >= 0),
+  total_quantity INTEGER NOT NULL DEFAULT 1 CHECK (total_quantity >= 0),
+  sold_quantity INTEGER NOT NULL DEFAULT 0 CHECK (sold_quantity >= 0),
   category TEXT NOT NULL DEFAULT 'Momentos da festa',
   display_order INTEGER NOT NULL DEFAULT 0,
   active INTEGER NOT NULL DEFAULT 1,
@@ -93,6 +98,7 @@ CREATE TABLE IF NOT EXISTS payments (
   paid_at TEXT,
   claimed_at TEXT,
   confirmed_by_admin INTEGER NOT NULL DEFAULT 0,
+  oversold INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -149,6 +155,7 @@ function createConnection() {
   database.pragma("journal_mode = WAL");
   database.pragma("foreign_keys = ON");
   database.exec(SCHEMA);
+  migrate(database);
   seed(database);
   return database;
 }
@@ -168,11 +175,13 @@ type SeedGift = {
   image_key: string;
   amount_cents: number;
   category: string;
+  total_quantity?: number;
 };
 
 const SEED_GIFTS: SeedGift[] = [
   {
     slug: "primeiro-chopp-da-noiva",
+    total_quantity: 3,
     name: "Primeiro Chop da Noiva",
     description: "Porque todo grande momento merece um primeiro brinde.",
     image_key: "chopp",
@@ -181,6 +190,7 @@ const SEED_GIFTS: SeedGift[] = [
   },
   {
     slug: "ultimo-chopp-das-noivas",
+    total_quantity: 2,
     name: "Último Chop das Noivas",
     description: "O brinde que encerra a noite. Ninguém precisa lembrar disso depois.",
     image_key: "chopp",
@@ -189,6 +199,7 @@ const SEED_GIFTS: SeedGift[] = [
   },
   {
     slug: "brinde-que-ninguem-deveria-tomar",
+    total_quantity: 3,
     name: "Aquele Brinde que Ninguém Deveria Tomar",
     description: "Já sabemos como termina. Mesmo assim, ninguém recusa.",
     image_key: "brinde",
@@ -197,6 +208,7 @@ const SEED_GIFTS: SeedGift[] = [
   },
   {
     slug: "sobremesa-das-noivas",
+    total_quantity: 2,
     name: "Sobremesa das Noivas",
     description: "A parte mais doce da noite, dividida com você.",
     image_key: "sobremesa",
@@ -205,6 +217,7 @@ const SEED_GIFTS: SeedGift[] = [
   },
   {
     slug: "fundo-emergencial-do-open-bar",
+    total_quantity: 2,
     name: "Fundo Emergencial do Open Bar",
     description: "Segurança para o balcão não fechar antes da valsa.",
     image_key: "openbar",
@@ -213,6 +226,7 @@ const SEED_GIFTS: SeedGift[] = [
   },
   {
     slug: "terapia-pos-casamento",
+    total_quantity: 2,
     name: "Terapia Pós-Casamento",
     description: "Um investimento bem bureaucraticamente correto para o ano que vem.",
     image_key: "terapia",
@@ -221,6 +235,7 @@ const SEED_GIFTS: SeedGift[] = [
   },
   {
     slug: "combustivel-para-a-volta",
+    total_quantity: 2,
     name: "Combustível para a Volta",
     description: "Para a noite não acabar antes de vocês chegarem em casa.",
     image_key: "combustivel",
@@ -229,6 +244,7 @@ const SEED_GIFTS: SeedGift[] = [
   },
   {
     slug: "eu-avisei-que-ia-gastar",
+    total_quantity: 2,
     name: "Eu Avisei que Ia Gastar",
     description: "Você avisou. A gente anotou. Agora é sua vez de repassar a conta.",
     image_key: "aviso",
@@ -237,6 +253,7 @@ const SEED_GIFTS: SeedGift[] = [
   },
   {
     slug: "brinde-as-noivas",
+    total_quantity: 5,
     name: "Um Brinde às Noivas",
     description: "Para o jogo de transformar uma noite em memória.",
     image_key: "brinde",
@@ -245,6 +262,7 @@ const SEED_GIFTS: SeedGift[] = [
   },
   {
     slug: "pedacinho-da-lua-de-mel",
+    total_quantity: 2,
     name: "Um Pedacinho da Nossa Lua de Mel",
     description: "Ajuda a comprar a lua de mel que a gente vai contar pra todo mundo.",
     image_key: "lua",
@@ -253,6 +271,7 @@ const SEED_GIFTS: SeedGift[] = [
   },
   {
     slug: "experiencia-em-curitiba",
+    total_quantity: 1,
     name: "Uma Experiência em Curitiba",
     description: "Um passeio a três, do jeito que a gente sempre quis fazer.",
     image_key: "curitiba",
@@ -277,10 +296,29 @@ const SEED_SETTINGS: Record<string, string> = {
   google_drive_folder_id: process.env.GOOGLE_DRIVE_FOLDER_ID || "1BxFLKSC8o0MezlAuuewodhnto1EMSz_o",
 };
 
+function columnExists(database: Database.Database, table: string, column: string) {
+  const columns = database.pragma(`table_info(${table})`) as { name: string }[];
+  return columns.some((item) => item.name === column);
+}
+
+function migrate(database: Database.Database) {
+  const additions: [string, string, string][] = [
+    ["gifts", "total_quantity", "INTEGER NOT NULL DEFAULT 1"],
+    ["gifts", "sold_quantity", "INTEGER NOT NULL DEFAULT 0"],
+    ["payments", "oversold", "INTEGER NOT NULL DEFAULT 0"],
+  ];
+  for (const [table, column, definition] of additions) {
+    if (!columnExists(database, table, column)) {
+      database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
+  }
+}
+
 function seed(database: Database.Database) {
   const insertGift = database.prepare(`
-    INSERT OR IGNORE INTO gifts (slug, name, description, image_key, amount_cents, category, display_order)
-    VALUES (@slug, @name, @description, @image_key, @amount_cents, @category, @display_order)
+    INSERT OR IGNORE INTO gifts
+      (slug, name, description, image_key, amount_cents, category, display_order, total_quantity)
+    VALUES (@slug, @name, @description, @image_key, @amount_cents, @category, @display_order, @total_quantity)
   `);
   const insertSetting = database.prepare(`
     INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)
@@ -288,7 +326,11 @@ function seed(database: Database.Database) {
 
   const run = database.transaction(() => {
     SEED_GIFTS.forEach((gift, index) =>
-      insertGift.run({ ...gift, display_order: (index + 1) * 10 }),
+      insertGift.run({
+        ...gift,
+        total_quantity: gift.total_quantity ?? 1,
+        display_order: (index + 1) * 10,
+      }),
     );
     for (const [key, value] of Object.entries(SEED_SETTINGS)) {
       insertSetting.run(key, value);

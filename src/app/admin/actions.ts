@@ -12,6 +12,7 @@ import {
 } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { parseAmountToCents, slugify } from "@/lib/format";
+import { markPaymentPaid } from "@/lib/payments";
 import { retryFailedPhoto } from "@/lib/photos";
 import { getSetting, setSetting, SETTING_KEYS } from "@/lib/settings";
 
@@ -40,6 +41,13 @@ async function requireAdmin() {
   if (!(await isAuthenticated())) redirect("/admin/login");
 }
 
+function getGiftSold(giftId: number) {
+  const row = getDb()
+    .prepare<[number], { sold: number }>(`SELECT sold_quantity AS sold FROM gifts WHERE id = ?`)
+    .get(giftId);
+  return row?.sold ?? 0;
+}
+
 function field(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
 }
@@ -54,6 +62,7 @@ export async function saveGiftAction(formData: FormData) {
   const category = field(formData, "category") || "Momentos da festa";
   const imageKey = field(formData, "image_key") || "default";
   const displayOrder = Number(field(formData, "display_order") || 0);
+  const totalQuantity = Math.max(0, Number(field(formData, "total_quantity") || 1));
   const active = formData.get("active") ? 1 : 0;
 
   if (!name || amountCents === null) {
@@ -65,9 +74,19 @@ export async function saveGiftAction(formData: FormData) {
     db.prepare(
       `UPDATE gifts
        SET name = ?, description = ?, amount_cents = ?, category = ?, image_key = ?,
-           display_order = ?, active = ?, updated_at = datetime('now')
+           display_order = ?, total_quantity = ?, active = ?, updated_at = datetime('now')
        WHERE id = ?`,
-    ).run(name, description, amountCents ?? 0, category, imageKey, displayOrder, active, id);
+    ).run(
+      name,
+      description,
+      amountCents ?? 0,
+      category,
+      imageKey,
+      displayOrder,
+      Math.max(totalQuantity, getGiftSold(id)),
+      active,
+      id,
+    );
   } else {
     const base = slugify(name) || `presente-${Date.now()}`;
     let slug = base;
@@ -77,9 +96,20 @@ export async function saveGiftAction(formData: FormData) {
       suffix += 1;
     }
     db.prepare(
-      `INSERT INTO gifts (slug, name, description, image_key, amount_cents, category, display_order, active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(slug, name, description, imageKey, amountCents ?? 0, category, displayOrder, active);
+      `INSERT INTO gifts
+        (slug, name, description, image_key, amount_cents, category, display_order, total_quantity, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      slug,
+      name,
+      description,
+      imageKey,
+      amountCents ?? 0,
+      category,
+      displayOrder,
+      totalQuantity,
+      active,
+    );
   }
 
   revalidatePath("/admin/presentes");
@@ -103,23 +133,22 @@ export async function confirmPaymentAction(formData: FormData) {
   await requireAdmin();
   const id = Number(field(formData, "id"));
   if (!id) return;
-  const db = getDb();
-  const marked = db.transaction(() => {
-    db.prepare(
-      `INSERT OR IGNORE INTO payment_events
-        (payment_id, provider_event_id, event_type, payload, processed_at)
-       VALUES (?, ?, 'manual.confirmed', 'confirmado no painel', datetime('now'))`,
-    ).run(id, `manual:${id}`);
-    db.prepare(
-      `UPDATE payments
-       SET status = 'paid', confirmed_by_admin = 1, paid_at = COALESCE(paid_at, datetime('now')),
-           updated_at = datetime('now')
-       WHERE id = ?`,
-    ).run(id);
+  const payment = getDb()
+    .prepare<[number], { gift_id: number; status: string }>(
+      `SELECT gift_id, status FROM payments WHERE id = ?`,
+    )
+    .get(id);
+  if (!payment || payment.status === "paid") return;
+  markPaymentPaid({
+    paymentId: id,
+    providerEventId: `manual:${id}`,
+    eventType: "manual.confirmed",
+    payload: "confirmado no painel",
   });
-  marked();
+  getDb().prepare(`UPDATE payments SET confirmed_by_admin = 1 WHERE id = ?`).run(id);
   revalidatePath("/admin/pagamentos");
   revalidatePath("/admin");
+  revalidatePath("/presentes");
 }
 
 export async function cancelPaymentAction(formData: FormData) {
