@@ -91,16 +91,36 @@ caminho suportado é OAuth da conta humana proprietária da pasta.
 
 ## Publicar
 
-Qualquer hospedagem Next.js com HTTPS (Vercel, Render, Railway, uma VPS). **HTTPS é obrigatório**:
-a câmera do navegador não funciona em contexto inseguro.
+### Atenção: Vercel não serve para esta versão
 
-No servidor de produção:
+O banco atual é **SQLite em arquivo** (`data/deixa-aqui.db`) e o armazenamento local de fotos usa
+`data/uploads`. Na Vercel o sistema de arquivos da função é somente leitura e descartado a cada
+deploy: o site subiria, mas **todo presente, pagamento e foto seria perdido** a cada build, e o
+`mkdir` de `data/` quebraria as requisições.
+
+Duas saídas:
+
+**A. Migrar o banco para Postgres (permite Vercel).** Supabase, Neon ou qualquer Postgres
+gerenciado. Envolve trocar o driver e a camada de acesso; o resto do site (rotas, componentes,
+adapters de Pix e Drive) continua igual. É o caminho se a hospedagem definite for Vercel.
+
+**B. Hospedar com disco persistente.** Render, Railway, Fly.io ou uma VPS: o código atual sobe sem
+nenhuma mudança, com `data/` em disco persistente. `npm run build` gera `.next-build`, e `npm start`
+seta a mesma variável, então o deploy precisa de:
+
+```
+NODE_VERSION=20
+# npm run build && npm start
+```
+
+### Em qualquer hospedagem
 
 - `ADMIN_PASSWORD_HASH` obrigatório;
-- `PHOTO_STORAGE=drive` e as credenciais do Drive se as fotos forem direto para o Google;
+- `PHOTO_STORAGE=drive` e as credenciais do Drive: em hospedagem serverless **não há disco**, então
+  as fotos obrigatoriamente precisam ir para o Google Drive;
 - `PIX_PROVIDER=openpix` + `OPENPIX_WEBHOOK_TOKEN` se quiser confirmação automática;
-- o diretório `data/` (SQLite) precisa de disco persistente — em hospedagem serverless, prefira
-  migrar o banco para Postgres/Supabase antes do casamento.
+- `NEXT_PUBLIC_SITE_URL` com o domínio real (usado nas URLs de confirmação);
+- **HTTPS é obrigatório**: a câmera do navegador não funciona em contexto inseguro.
 
 ## Estrutura
 
