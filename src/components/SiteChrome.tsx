@@ -1,5 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Monogram, Mosquitinho } from "@/components/Botanical";
+import { Mosquitinho } from "@/components/Botanical";
 import { weddingNames } from "@/lib/settings";
 
 const NAV = [
@@ -13,12 +14,19 @@ export async function SiteHeader() {
   return (
     <header className="mx-auto w-full max-w-5xl px-5 pt-6 md:px-8">
       <div className="flex items-center justify-between gap-4">
-        <Link href="/" className="group flex items-center gap-3">
-          <Monogram className="h-10 w-10 text-gold-600 transition-transform duration-500 group-hover:rotate-[8deg]" />
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/logo.jpg"
+            alt={`${names} — Nosso Dia`}
+            width={1008}
+            height={1063}
+            priority
+            className="h-11 w-auto shrink-0 md:h-12"
+          />
           <span className="flex flex-col leading-tight">
             <span className="font-display text-lg text-navy-900 sm:text-xl">{names}</span>
             <span className="text-[0.62rem] uppercase tracking-[0.32em] text-navy-800/60">
-              Deixa aqui
+              Nosso dia
             </span>
           </span>
         </Link>

@@ -1,6 +1,6 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/admin/LoginForm";
-import { Monogram } from "@/components/Botanical";
 import { isAdminEnabled, isAuthenticated } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,14 @@ export default async function AdminLoginPage() {
 
   return (
     <div className="mx-auto max-w-sm px-5 py-16 text-center">
-      <Monogram className="mx-auto h-12 w-12 text-gold-600" />
+      <Image
+        src="/logo.jpg"
+        alt="Jéssica & Jennifer — Nosso Dia"
+        width={1008}
+        height={1063}
+        priority
+        className="mx-auto h-14 w-auto"
+      />
       <h1 className="mt-5 font-display text-2xl text-navy-900">Área das noivas</h1>
       <p className="mt-2 text-sm text-navy-800/65">Presentes, pagamentos e fotos do casamento.</p>
 

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { BottomNav, SiteHeader } from "@/components/SiteChrome";
 import { weddingDateLabel, weddingNames } from "@/lib/settings";
 
@@ -19,7 +20,14 @@ async function SiteFooter() {
   return (
     <footer className="mx-auto mt-20 w-full max-w-5xl px-5 pb-28 pt-10 text-center md:px-8 md:pb-12">
       <div className="rule-gold mb-8" />
-      <p className="font-display text-lg text-navy-900">{names}</p>
+      <Image
+        src="/logo.jpg"
+        alt={`${names} — Nosso Dia`}
+        width={1008}
+        height={1063}
+        className="mx-auto h-16 w-auto"
+      />
+      <p className="mt-5 font-display text-lg text-navy-900">{names}</p>
       {date ? <p className="mt-1 text-sm text-navy-800/70">{date}</p> : null}
       <p className="mt-4 text-xs text-navy-800/60">
         As fotos enviadas ficam guardadas pelas noivas e não são publicadas automaticamente.{" "}
