@@ -1,11 +1,15 @@
 import React from "react";
 import { Character } from "../characters";
-import { Blanket, Bill, CoffeeMaker } from "../objects";
+import { Blanket, Bill, CoffeeMaker, DinnerTable, Suitcase, Heart } from "../objects";
 import { illustrationTokens } from "../tokens";
 
-// --- Scenes Implementation ---
+interface SceneProps {
+  interactive?: boolean;
+  state?: string;
+  props?: any;
+}
 
-export function BlanketReasonScene({ interactive, state }: { interactive?: boolean; state?: string }) {
+export function BlanketReasonScene({ interactive, state }: SceneProps) {
   return (
     <svg viewBox="0 0 300 220" className="w-full h-full overflow-visible">
       <g transform="translate(150, 110)">
@@ -13,13 +17,12 @@ export function BlanketReasonScene({ interactive, state }: { interactive?: boole
         <g transform="translate(0, 20)" className={interactive && state === "hover" ? "animate-bounce" : ""}>
           <Blanket wrap="full" />
         </g>
-        <path d="M-10 -40 L10 -40" stroke={illustrationTokens.colors.gold} strokeWidth="2" />
       </g>
     </svg>
   );
 }
 
-export function FirstCoffeeScene({ interactive, state }: { interactive?: boolean; state?: string }) {
+export function FirstCoffeeScene({ interactive, state }: SceneProps) {
   return (
     <svg viewBox="0 0 300 220" className="w-full h-full overflow-visible">
       <g transform="translate(150, 110)">
@@ -32,13 +35,53 @@ export function FirstCoffeeScene({ interactive, state }: { interactive?: boolean
   );
 }
 
-export function FirstBillScene({ interactive, state }: { interactive?: boolean; state?: string }) {
+export function FirstBillScene({ interactive, state }: SceneProps) {
   return (
     <svg viewBox="0 0 300 220" className="w-full h-full overflow-visible">
       <g transform="translate(150, 110)">
         <Character person="jessica" expression="panic" />
         <g transform="translate(0, 20)" className={interactive && state === "hover" ? "animate-pulse" : ""}>
           <Bill />
+        </g>
+      </g>
+    </svg>
+  );
+}
+
+export function DinnerScene({ interactive, state }: SceneProps) {
+  return (
+    <svg viewBox="0 0 300 220" className="w-full h-full overflow-visible">
+      <g transform="translate(150, 110)">
+        <Character person="jessica" expression="happy" />
+        <Character person="jennifer" expression="happy" transform="translate(40, 0)" />
+        <g transform="translate(20, 20)">
+          <DinnerTable />
+        </g>
+      </g>
+    </svg>
+  );
+}
+
+export function TravelScene({ interactive, state }: SceneProps) {
+  return (
+    <svg viewBox="0 0 300 220" className="w-full h-full overflow-visible">
+      <g transform="translate(150, 110)">
+        <Character person="jessica" expression="happy" />
+        <g transform="translate(40, 20)">
+          <Suitcase />
+        </g>
+      </g>
+    </svg>
+  );
+}
+
+export function LoveScene({ interactive, state }: SceneProps) {
+  return (
+    <svg viewBox="0 0 300 220" className="w-full h-full overflow-visible">
+      <g transform="translate(150, 110)">
+        <Character person="jennifer" expression="happy" />
+        <g transform="translate(0, -40)" className="animate-bounce">
+          <Heart />
         </g>
       </g>
     </svg>
