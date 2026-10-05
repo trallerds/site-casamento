@@ -7,7 +7,7 @@ export function GiftCard({ gift }: { gift: GiftRow }) {
   return (
     <Link
       href={`/presentes/${gift.slug}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-navy-900/10 bg-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:shadow-lift active:-translate-y-0.5"
+      className="group flex flex-col overflow-hidden rounded-card border border-navy-900/10 bg-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:shadow-lift active:-translate-y-0.5"
     >
       <GiftArt name={gift.name} category={gift.category} className="aspect-[4/3] w-full" />
       <div className="flex flex-1 flex-col gap-2 p-5">

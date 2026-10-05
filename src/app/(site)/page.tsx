@@ -35,28 +35,31 @@ export default async function HomePage() {
         <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
           <Link
             href="/presentes"
-            className="rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800"
+            className="rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 active:scale-[0.98]"
           >
             Presentear
           </Link>
           <Link
             href="/fotos"
-            className="rounded-full border border-navy-900/25 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700"
+            className="rounded-full border border-navy-900/25 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700 active:scale-[0.98]"
           >
             Deixar uma foto
           </Link>
         </div>
       </section>
 
-      <section className="mt-20 grid gap-8 md:grid-cols-[1fr_auto] md:items-start">
-        <div>
-          <h2 className="font-display text-2xl text-navy-900">{storyTitle}</h2>
-          <div className="rule-gold mt-4 w-24" />
-          <p className="mt-4 max-w-prose whitespace-pre-line text-[0.98rem] leading-relaxed text-navy-800/80">
-            {storyText}
-          </p>
-        </div>
-        <Trigo className="hidden h-28 w-14 text-gold-500/50 md:block" />
+      {/* Mesma linguagem do hero e da lista: bloco centralizado com
+          medida curta. Texto colado na esquerda com a metade
+          direita vazia era o que desequilibrava a pagina. */}
+      <section className="mt-20 text-center">
+        <Trigo className="mx-auto h-12 w-6 text-gold-500/50" />
+        <h2 className="mt-5 font-display text-2xl text-navy-900 text-balance sm:text-3xl">
+          {storyTitle}
+        </h2>
+        <div className="rule-gold mx-auto mt-4 w-24" />
+        <p className="mx-auto mt-5 max-w-prose whitespace-pre-line text-[0.98rem] leading-relaxed text-navy-800/80 text-pretty">
+          {storyText}
+        </p>
       </section>
 
       <section className="mt-20">
@@ -76,7 +79,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mt-20 overflow-hidden rounded-2xl border border-navy-900/10 bg-navy-900 px-6 py-12 text-center text-ivory shadow-soft md:px-12">
+      <section className="mt-20 overflow-hidden rounded-card border border-navy-900/10 bg-navy-900 px-6 py-12 text-center text-ivory shadow-soft md:px-12">
         <Trigo className="mx-auto h-14 w-7 text-gold-400/70" />
         <h2 className="mt-5 font-display text-2xl text-balance sm:text-3xl">
           Compartilhe um momento com a gente
@@ -87,7 +90,7 @@ export default async function HomePage() {
         </p>
         <Link
           href="/fotos"
-          className="mt-7 inline-block rounded-full bg-gold-500 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-950 transition hover:bg-gold-400"
+          className="mt-7 inline-block rounded-full bg-gold-500 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-950 transition hover:bg-gold-400 active:scale-[0.98]"
         >
           Enviar uma foto
         </Link>

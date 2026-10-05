@@ -25,7 +25,7 @@ export default function PhotosPage() {
         </p>
       </header>
 
-      <div className="mt-8 rounded-2xl border border-navy-900/10 bg-white p-6 shadow-soft md:p-8">
+      <div className="mt-8 rounded-card border border-navy-900/10 bg-white p-6 shadow-soft md:p-8">
         <PhotoUploader />
       </div>
 

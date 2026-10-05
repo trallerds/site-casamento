@@ -85,22 +85,6 @@ export function Trigo({ className = "" }: MotifProps) {
   );
 }
 
-export function Monogram({ className = "" }: MotifProps) {
-  return (
-    <svg viewBox="0 0 64 64" className={className} fill="none" aria-hidden="true">
-      <circle cx="32" cy="32" r="30" stroke="currentColor" strokeWidth="1" />
-      <circle cx="32" cy="32" r="25" stroke="currentColor" strokeWidth="0.6" opacity="0.6" />
-      <path
-        d="M22 42V22l20 20V22"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export function Flourish({ className = "" }: MotifProps) {
   return (
     <svg viewBox="0 0 160 24" className={className} fill="none" aria-hidden="true">

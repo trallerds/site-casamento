@@ -15,6 +15,11 @@ export type PixPaymentView = {
 
 type CopyState = "idle" | "loading" | "copied" | "manual";
 
+// O QR e um documento impresso: cantos retos, area branca e o
+// texto de apoio com a mesma largura do canvas, senao a legenda
+// mais larga que o QR e o joga para um lado dentro do card.
+const QR_SIZE = 220;
+
 export function PixPanel({ payment }: { payment: PixPaymentView }) {
   const [status, setStatus] = useState(payment.status);
   const [claimed, setClaimed] = useState(payment.claimed);
@@ -83,7 +88,7 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
   useEffect(() => {
     if (!pixCode || !canvasRef.current) return;
     QRCode.toCanvas(canvasRef.current, pixCode, {
-      width: 220,
+      width: QR_SIZE,
       margin: 1,
       errorCorrectionLevel: "M",
       color: { dark: "#0b2545", light: "#ffffff" },
@@ -157,12 +162,12 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
         <p className="mt-3 text-sm leading-relaxed text-navy-800/75">
           Seu presente já apareceu para as noivas.
         </p>
-        <a
+        <Link
           href={payment.confirmHref}
-          className="mt-7 inline-block rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory"
+          className="mt-7 inline-block rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory transition active:scale-[0.98]"
         >
           Ver a msg das noivas
-        </a>
+        </Link>
       </div>
     );
   }
@@ -178,7 +183,7 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
         </p>
         <Link
           href="/presentes"
-          className="mt-7 inline-block rounded-full border border-navy-900/25 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-900"
+          className="mt-7 inline-block rounded-full border border-navy-900/25 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700 active:scale-[0.98]"
         >
           Ver presentes
         </Link>
@@ -242,12 +247,15 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
 
       <div className="mt-8 hidden justify-center md:flex">
         {pixCode ? (
-        <figure className="rounded-xl border border-navy-900/10 bg-white p-4">
-          <canvas ref={canvasRef} role="img" aria-label="QR Code do Pix" />
-          <figcaption className="mt-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-navy-800/50">
-            Ou leia com a câmera do banco
-          </figcaption>
-        </figure>
+          <figure className="w-fit bg-white p-4">
+            <canvas ref={canvasRef} role="img" aria-label="QR Code do Pix" className="block" />
+            <figcaption
+              style={{ width: QR_SIZE }}
+              className="mt-3 text-balance text-center text-[0.65rem] uppercase leading-relaxed tracking-[0.16em] text-navy-800/50"
+            >
+              Ou leia com a câmera do banco
+            </figcaption>
+          </figure>
         ) : null}
       </div>
 

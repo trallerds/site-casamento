@@ -26,6 +26,12 @@
 
   --shadow-soft: 0 1px 2px rgb(11 37 69 / 0.04), 0 8px 30px rgb(11 37 69 / 0.07);
   --shadow-lift: 0 2px 4px rgb(11 37 69 / 0.06), 0 18px 48px rgb(11 37 69 / 0.12);
+
+  /* Radius e decisao de componente, nao regra global: a logo
+     oficial nao e recortada, a imagem de conteudo usa media e
+     o painel usa card. Logo e icone ficam sem radius. */
+  --radius-card: 1rem;
+  --radius-media: 0.75rem;
 }
 
 @layer base {
@@ -41,6 +47,7 @@
     font-feature-settings: "kern";
     -webkit-font-smoothing: antialiased;
     overflow-wrap: break-word;
+    touch-action: manipulation;
   }
 
   h1,
@@ -64,6 +71,21 @@
 }
 
 @layer components {
+  /* Um unico container para header, main e footer: mesma largura
+     maxima e mesma margem lateral em todas as paginas. */
+  .shell {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 64rem;
+    padding-inline: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .shell {
+      padding-inline: 2rem;
+    }
+  }
+
   .frame-line {
     border: 1px solid color-mix(in srgb, var(--color-gold-500) 42%, transparent);
   }

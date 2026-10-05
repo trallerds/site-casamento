@@ -45,15 +45,17 @@ export default async function PixPage({
   return (
     <div className="mx-auto max-w-md pt-6">
       <Link
-        href="/presentes"
+        href={`/presentes/${gift.slug}`}
         className="text-xs uppercase tracking-[0.2em] text-navy-800/60 transition-colors hover:text-gold-700"
       >
-        ← Presentes
+        ← Voltar para o presente
       </Link>
 
-      <div className="mt-5 overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-soft">
+      <div className="mt-5 overflow-hidden rounded-card border border-navy-900/10 bg-white shadow-soft">
         <div className="border-b border-navy-900/8 bg-ivory px-6 py-6 text-center">
-          <GiftArt name={gift.name} category={gift.category} className="mx-auto h-24 w-24 rounded-lg" />
+          {/* Ilustracao: sem radius proprio, e o card que recorta.
+              Radius dentro de radius e o que ficava estranho. */}
+          <GiftArt name={gift.name} category={gift.category} className="mx-auto h-24 w-24" />
           <p className="mt-4 text-[0.65rem] uppercase tracking-[0.24em] text-navy-800/55">
             Seu presente
           </p>

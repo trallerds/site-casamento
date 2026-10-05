@@ -197,7 +197,7 @@ export function PhotoUploader() {
 
       {step === "camera" ? (
         <div>
-          <div className="overflow-hidden rounded-2xl bg-navy-950">
+          <div className="overflow-hidden rounded-media bg-navy-950">
             <video
               ref={videoRef}
               playsInline
@@ -231,7 +231,7 @@ export function PhotoUploader() {
             <img
               src={preview}
               alt="Prévia da foto que você vai enviar"
-              className="aspect-[4/5] w-full rounded-2xl border border-navy-900/10 object-cover"
+              className="aspect-[4/5] w-full rounded-media border border-navy-900/10 object-cover"
             />
           ) : null}
           {step === "uploading" ? (
@@ -241,7 +241,7 @@ export function PhotoUploader() {
               </p>
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-navy-900/10">
                 <div
-                  className="h-full rounded-full bg-gold-500 transition-all duration-200"
+                  className="h-full rounded-full bg-gold-500 transition-[width] duration-200"
                   style={{ width: `${progress}%` }}
                 />
               </div>
