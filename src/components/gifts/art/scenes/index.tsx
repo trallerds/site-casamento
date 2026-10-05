@@ -1,5 +1,5 @@
 import React from "react";
-import { illustrationTokens } from "../art/tokens";
+import { illustrationTokens } from "../tokens";
 
 interface SceneProps {
   interactive?: boolean;
@@ -120,7 +120,7 @@ export function FirstTankArt({ interactive, state }: SceneProps) {
         <g transform="translate(40, 20)">
           <rect x="-20" y="0" width="40" height="25" rx="4" fill="none" stroke={illustrationTokens.colors.ink} strokeWidth={illustrationTokens.strokeWidth} />
           <path d="M-20 12 L-30 12" stroke={illustrationTokens.colors.ink} strokeWidth="2" />
-          <circle cx="-35" cy="12" r="3" fill={illustrationTokens.colors.gold" />
+          <circle cx="-35" cy="12" r="3" fill={illustrationTokens.colors.gold} />
         </g>
       </g>
     </svg>
