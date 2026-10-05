@@ -18,10 +18,10 @@ export const GIFT_ART: Record<string, Scene> = {
 } as const;
 
 export function resolveArtKey(name: string, category: string, currentKey?: string): { key: string; palette: string } {
-  // Prioridade total: a chave explícita do banco.
-  // Não há mais inferência semântica ou adivinhação por categoria.
+  // Decisão explícita via banco de dados
   if (currentKey && GIFT_ART[currentKey]) {
     return { key: currentKey, palette: GIFT_ART[currentKey].palette };
   }
+  // Fallback neutro para qualquer outro caso
   return { key: "default", palette: GIFT_ART["default"].palette };
 }

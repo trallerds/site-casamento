@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRive, Layout, Fit, Alignment } from "@rive-app/react-canvas";
 import { GIFT_ART, resolveArtKey } from "./gifts/art/registry";
+import { GiftArtFallback } from "./gifts/art/Fallback";
 
 interface GiftArtProps {
   imageKey?: string;
@@ -22,12 +23,16 @@ export function GiftArtRive({
   const { key, palette } = resolveArtKey(name, category, imageKey);
   const artConfig = GIFT_ART[key] || GIFT_ART["default"];
   
-  const [hasError, setHasError] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const { rive, RiveComponent } = useRive({
     src: artConfig.src,
     autoplay: true,
     layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
+    onError: () => {
+      console.warn(`Rive asset not found or invalid: ${artConfig.src}`);
+      setLoadError(true);
+    },
   });
 
   const bgColors: Record<string, string> = {
@@ -39,8 +44,8 @@ export function GiftArtRive({
   };
 
   return (
-    <div className={`relative w-full h-full overflow-//hidden transition-colors duration-500 ${className} ${bgColors[palette] || "bg-ivory/50"}`}>
-      {!hasError ? (
+    <div className={`relative w-full h-full overflow-hidden transition-colors duration-500 ${className} ${bgColors[palette] || "bg-ivory/50"}`}>
+      {!loadError ? (
         <RiveComponent 
           className="w-full h-full" 
           onClick={() => {
@@ -50,11 +55,7 @@ export function GiftArtRive({
           }}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center text-center">
-          <span className="text-[10px] uppercase tracking-widest text-navy-900/30 font-body">
-            Arte em breve
-          </span>
-        </div>
+        <GiftArtFallback />
       )}
     </div>
   );
