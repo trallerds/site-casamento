@@ -1,27 +1,20 @@
-import React from "react";
-
 export type ArtKey = string;
 
-interface Scene {
-  src: string;
+export interface GiftArtConfig {
   palette: string;
 }
 
-export const GIFT_ART: Record<string, Scene> = {
-  "blanket-reason": { src: "/gifts/blanket-reason.riv", palette: "ivory-navy" },
-  "first-dinner": { src: "/gifts/first-dinner.riv", palette: "ivory-gold" },
-  "first-coffee": { src: "/gifts/first-coffee.riv", palette: "navy-ivory" },
-  "first-bill": { src: "/gifts/first-bill.riv", palette: "ivory-red-accent" },
-  "first-tank": { src: "/gifts/first-tank.riv", palette: "ivory-gold" },
-  "first-pizza": { src: "/gifts/first-pizza.riv", palette: "ivory-blush" },
-  "default": { src: "/gifts/default.riv", palette: "ivory-navy" },
+export const GIFT_ART_CONFIG: Record<string, GiftArtConfig> = {
+  "blanket-reason": { palette: "ivory-navy" },
+  "first-dinner": { palette: "ivory-gold" },
+  "first-coffee": { palette: "navy-ivory" },
+  "first-bill": { palette: "ivory-red-accent" },
+  "first-tank": { palette: "ivory-gold" },
+  "first-pizza": { palette: "ivory-blush" },
+  "default": { palette: "ivory-navy" },
 } as const;
 
-export function resolveArtKey(name: string, category: string, currentKey?: string): { key: string; palette: string } {
-  // Decisão explícita via banco de dados
-  if (currentKey && GIFT_ART[currentKey]) {
-    return { key: currentKey, palette: GIFT_ART[currentKey].palette };
-  }
-  // Fallback neutro para qualquer outro caso
-  return { key: "default", palette: GIFT_ART["default"].palette };
+export function resolveArtPalette(imageKey?: string): string {
+  const config = GIFT_ART_CONFIG[imageKey || "default"] || GIFT_ART_CONFIG["default"];
+  return config.palette;
 }
