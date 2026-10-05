@@ -9,7 +9,7 @@ export function GiftCard({ gift }: { gift: GiftRow }) {
       href={`/presentes/${gift.slug}`}
       className="group flex flex-col overflow-hidden rounded-xl border border-navy-900/10 bg-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:shadow-lift"
     >
-      <GiftArt imageKey={gift.image_key} name={gift.name} className="aspect-[4/3] w-full" />
+      <GiftArt name={gift.name} category={gift.category} className="aspect-[4/3] w-full" />
       <div className="flex flex-1 flex-col gap-2 p-5">
         <h3 className="font-display text-lg leading-snug text-navy-900">{gift.name}</h3>
         <p className="flex-1 text-sm leading-relaxed text-navy-800/70">{gift.description}</p>

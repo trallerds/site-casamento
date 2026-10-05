@@ -35,7 +35,7 @@ export default async function GiftDetailPage({ params }: { params: Promise<{ slu
       </Link>
 
       <div className="mt-5 overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-soft">
-        <GiftArt imageKey={gift.image_key} name={gift.name} className="aspect-[16/10] w-full" />
+        <GiftArt name={gift.name} category={gift.category} className="aspect-[16/10] w-full" />
         <div className="px-6 py-8 text-center md:px-10">
           <p className="text-[0.65rem] uppercase tracking-[0.28em] text-gold-700">{gift.category}</p>
           <h1 className="mt-3 font-display text-3xl leading-tight text-navy-900 text-balance md:text-4xl">
