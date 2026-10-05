@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import { resolveArtPalette } from "./gifts/art/registry";
@@ -18,7 +20,7 @@ export function GiftArt({ imageKey, className = "" }: GiftArtProps) {
     "ivory-blush": "bg-blush-500/20",
   };
 
-  const src = imageKey ? `/gifts/${imageKey}.svg` : "///gifts/default.svg";
+  const src = imageKey ? `/gifts/${imageKey}.svg` : "/gifts/default.svg";
 
   const animationMap: Record<string, string> = {
     "first-bill": "art-animate-shake",
@@ -39,9 +41,6 @@ export function GiftArt({ imageKey, className = "" }: GiftArtProps) {
         alt="Ilustração do presente" 
         fill 
         className={`object-contain p-4 transition-transform duration-700 group-hover:scale-110 ${animationClass ? `group-hover:${animationClass}` : ""}`}
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = "/gifts/default.svg";
-        }}
       />
     </div>
   );
