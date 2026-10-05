@@ -32,20 +32,21 @@ export default async function HomePage() {
           {heroTitle}
         </p>
 
-        <div className="mt-12 flex flex-col items-center justify-center gap-5 sm:flex-row">
-          <Link
-            href="/presentes"
-            className="w-full sm:w-auto rounded-full bg-navy-900 px-10 py-4 text-sm uppercase tracking-[0.2em] text-ivory shadow-lift transition-all duration-300 hover:bg-navy-800 hover:shadow-soft active:scale-[0.97]"
-          >
-            Presentear
-          </Link>
-          <Link
-            href="/fotos"
-            className="w-full sm:w-auto rounded-full border border-navy-900/20 px-10 py-4 text-sm uppercase tracking-[0.2em] text-navy-900 transition-all duration-300 hover:border-gold-500 hover:text-gold-700 active:scale-[0.97]"
-          >
-            Deixar uma foto
-          </Link>
-        </div>
+         <div className="mt-12 flex flex-col items-center justify-center gap-5 sm:flex-row">
+           <Link
+             href="/presentes"
+             className="w-full sm:w-auto rounded-full bg-navy-900 px-12 py-5 text-sm uppercase tracking-[0.2em] text-ivory shadow-lift transition-all duration-300 hover:bg-navy-800 hover:shadow-soft active:scale-[0.97] font-medium"
+           >
+             🎁 Quero presentear
+           </Link>
+           <Link
+             href="/fotos"
+             className="w-full sm:w-auto rounded-full border border-navy-900/20 px-12 py-5 text-sm uppercase tracking-[0.2em] text-navy-900 transition-all duration-300 hover:border-gold-500 hover:text-gold-700 active:scale-[0.97] font-medium"
+           >
+             📸 Deixar uma foto
+           </Link>
+         </div>
+
       </section>
 
       <section className="mt-28 slide-up text-center">
