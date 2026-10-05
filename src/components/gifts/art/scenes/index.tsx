@@ -53,7 +53,9 @@ export function DinnerScene({ interactive, state }: SceneProps) {
     <svg viewBox="0 0 300 220" className="w-full h-full overflow-visible">
       <g transform="translate(150, 110)">
         <Character person="jessica" expression="happy" />
-        <Character person="jennifer" expression="happy" transform="translate(40, 0)" />
+        <g transform="translate(40, 0)">
+          <Character person="jennifer" expression="happy" />
+        </g>
         <g transform="translate(20, 20)">
           <DinnerTable />
         </g>
