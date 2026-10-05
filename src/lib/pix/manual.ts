@@ -18,7 +18,7 @@ async function payloadFor(amountCents: number, txid: string) {
       recipientName: (await getSetting("pix_recipient_name")) || (await weddingNames()),
       amountCents,
       txid,
-      city: (await getSetting("pix_recipient_city")) || "SAO PAULO",
+      city: (await getSetting("pix_recipient_city")) || process.env.PIX_RECIPIENT_CITY || "PARANAGUA",
     });
   }
   return staticPayload();

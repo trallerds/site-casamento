@@ -48,15 +48,16 @@ export async function POST(request: Request) {
   try {
     const payment = await createPaymentForGift(gift);
     return Response.json({ publicId: payment.publicId }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
+    console.error("[Payments API Error]:", error);
     if (error instanceof PixError) {
       return Response.json(
-        { error: "Não conseguimos gerar o Pix agora. Tente novamente em alguns instantes." },
+        { error: error.message || "Não conseguimos gerar o Pix agora. Tente novamente em alguns instantes." },
         { status: error.status },
       );
     }
     return Response.json(
-      { error: "Não conseguimos gerar o Pix agora. Tente novamente em alguns instantes." },
+      { error: "Erro interno ao gerar o Pix. Tente novamente em alguns instantes." },
       { status: 502 },
     );
   }
