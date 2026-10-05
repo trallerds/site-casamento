@@ -11,7 +11,7 @@ interface SceneProps {
 
 export interface Scene {
   component: React.ComponentType<SceneProps>;
-  palette: "ivory-navy" | "ivory-gold" | "navy-ivory";
+  palette: string;
 }
 
 export const GIFT_ART: Record<string, Scene> = {

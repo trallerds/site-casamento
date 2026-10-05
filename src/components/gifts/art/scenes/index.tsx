@@ -1,7 +1,7 @@
 import React from "react";
 import { Character } from "../characters";
 import { Blanket, Bill, CoffeeMaker } from "../objects";
-import { illustrationTokens } from "../art/tokens";
+import { illustrationTokens } from "../tokens";
 
 // --- Scenes Implementation ---
 

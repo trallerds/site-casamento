@@ -1,5 +1,5 @@
 import React from "react";
-import { illustrationTokens } from "../art/tokens";
+import { illustrationTokens } from "../tokens";
 
 export function Blanket({ wrap = "full" }: { wrap?: "full" | "partial" }) {
   return (
