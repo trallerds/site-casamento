@@ -1,19 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Mosquitinho } from "@/components/Botanical";
-import { NAV } from "@/components/nav-items";
 import { NavLinks } from "@/components/NavLinks";
 import { weddingNames } from "@/lib/settings";
 
 export async function SiteHeader() {
   const names = await weddingNames();
   return (
-    <header className="mx-auto w-full max-w-5xl px-5 pt-6 md:px-8">
+    <header className="shell pt-6">
       <div className="flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-3">
+        {/* A logo e a marca oficial: entra sem radius e sem recorte,
+            no tamanho que o proprio arquivo tem. */}
+        <Link href="/" aria-label={`${names} — início`} className="flex items-center gap-3">
           <Image
             src="/logo.jpg"
-            alt={`${names} — Nosso Dia`}
+            alt=""
             width={1008}
             height={1063}
             priority
@@ -26,16 +27,8 @@ export async function SiteHeader() {
             </span>
           </span>
         </Link>
-        <nav aria-label="Navegação principal" className="hidden items-center gap-6 md:flex">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sm text-navy-800/75 transition-colors hover:text-navy-900"
-            >
-              {item.label}
-            </Link>
-          ))}
+        <nav aria-label="Navegação principal" className="hidden md:block">
+          <NavLinks variant="top" />
         </nav>
       </div>
       <Mosquitinho className="mt-4 h-8 w-full text-gold-500/45" />

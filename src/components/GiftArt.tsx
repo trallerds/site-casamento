@@ -1,4 +1,4 @@
-import { CallLily, Flourish, Monogram, Mosquitinho, Trigo } from "@/components/Botanical";
+import { CallLily, Flourish, Mosquitinho, Trigo } from "@/components/Botanical";
 
 /**
  * Cartao de presente: papel com o tinto suave da categoria e um dos
@@ -16,11 +16,13 @@ const CATEGORY_TONES: Record<string, { bg: string; ink: string }> = {
 
 const DEFAULT_TONE = { bg: "#f1efe8", ink: "#4a5a6a" };
 
-const MOTIFS = [CallLily, Mosquitinho, Trigo, Monogram];
+// So motivos botanicos, nenhum com letra: a marca do casal e a
+// logo oficial, nao um monograma solto no meio da lista.
+const MOTIFS = [CallLily, Mosquitinho, Trigo];
 
 function motifFor(name: string) {
   // FNV-1a com bits do meio: simulado sobre os 40 nomes
-  // reais, distribui 10/11/9/10 entre os motivos.
+  // reais, distribui 12/12/16 entre os motivos.
   let hash = 2166136261;
   for (let index = 0; index < name.length; index++) {
     hash ^= name.charCodeAt(index);

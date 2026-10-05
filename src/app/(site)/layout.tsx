@@ -6,8 +6,16 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <div className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(120%_80%_at_50%_0%,rgba(200,168,90,0.16),transparent_60%)]" />
+      <a
+        href="#conteudo"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-navy-900 focus:px-5 focus:py-3 focus:text-sm focus:text-ivory"
+      >
+        Pular para o conteúdo
+      </a>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-5xl px-5 pb-20 pt-6 md:px-8 md:pb-0">{children}</main>
+      <main id="conteudo" className="shell pb-20 pt-6 md:pb-0">
+        {children}
+      </main>
       <SiteFooter />
       <BottomNav />
     </>
@@ -18,11 +26,11 @@ async function SiteFooter() {
   const names = await weddingNames();
   const date = await weddingDateLabel();
   return (
-    <footer className="mx-auto mt-20 w-full max-w-5xl px-5 pb-28 pt-10 text-center md:px-8 md:pb-12">
+    <footer className="shell mt-20 pb-28 pt-10 text-center md:pb-12">
       <div className="rule-gold mb-8" />
       <Image
         src="/logo.jpg"
-        alt={`${names} — Nosso Dia`}
+        alt=""
         width={1008}
         height={1063}
         className="mx-auto h-16 w-auto"

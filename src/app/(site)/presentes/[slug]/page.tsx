@@ -34,7 +34,7 @@ export default async function GiftDetailPage({ params }: { params: Promise<{ slu
         ← Todos os presentes
       </Link>
 
-      <div className="mt-5 overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-soft">
+      <div className="mt-5 overflow-hidden rounded-card border border-navy-900/10 bg-white shadow-soft">
         <GiftArt name={gift.name} category={gift.category} className="aspect-[16/10] w-full" />
         <div className="px-6 py-8 text-center md:px-10">
           <p className="text-[0.65rem] uppercase tracking-[0.28em] text-gold-700">{gift.category}</p>

@@ -13,7 +13,7 @@ export function GiftBrowser({ groups }: { groups: Group[] }) {
 
   return (
     <div>
-      <div className="-mx-5 overflow-x-auto px-5 pb-1 md:mx-0 md:px-0">
+      <div className="-mx-6 overflow-x-auto px-6 pb-1 md:mx-0 md:px-0">
         <div role="group" aria-label="Filtrar por categoria" className="flex w-max gap-2">
           <CategoryChip active={active === null} onClick={() => setActive(null)}>
             Todos
