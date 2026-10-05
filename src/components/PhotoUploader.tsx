@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Step = "choose" | "camera" | "preview" | "uploading" | "done";
+type FacingMode = "user" | "environment";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 
@@ -14,6 +15,8 @@ export function PhotoUploader() {
   const [error, setError] = useState("");
   const [cameraHint, setCameraHint] = useState("");
   const [queued, setQueued] = useState(false);
+  const [facingMode, setFacingMode] = useState<FacingMode>("environment");
+  
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -38,10 +41,17 @@ export function PhotoUploader() {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("unsupported");
       }
+      
+      // Qualidade máxima: Solicitando a maior resolução disponível
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: { 
+          facingMode: facingMode,
+          width: { ideal: 4096 }, 
+          height: { ideal: 2160 } 
+        },
         audio: false,
       });
+      
       streamRef.current = stream;
       setStep("camera");
       requestAnimationFrame(() => {
@@ -59,17 +69,48 @@ export function PhotoUploader() {
     }
   }
 
+  async function toggleCamera() {
+    const nextMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(nextMode);
+    
+    // Reinicia a câmera com o novo modo
+    stopCamera();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: nextMode,
+          width: { ideal: 4096 }, 
+          height: { ideal: 2160 } 
+        },
+        audio: false,
+      });
+      streamRef.current = stream;
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          void videoRef.current.play();
+        }
+      });
+    } catch (err) {
+      console.error("Failed to switch camera", err);
+      setError("Erro ao trocar de câmera.");
+    }
+  }
+
   function capture() {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
+    
     const canvas = document.createElement("canvas");
-    const targetWidth = Math.min(video.videoWidth, 2000);
-    const scale = targetWidth / video.videoWidth;
-    canvas.width = targetWidth;
-    canvas.height = Math.round(video.videoHeight * scale);
+    // Mantém a resolução nativa do vídeo para qualidade máxima
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
     const context = canvas.getContext("2d");
     if (!context) return;
+    
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
     canvas.toBlob(
       (blob) => {
         if (!blob) return;
@@ -81,7 +122,7 @@ export function PhotoUploader() {
         setStep("preview");
       },
       "image/jpeg",
-      0.9,
+      0.95, // Aumentado para quase 1.0 para qualidade máxima
     );
   }
 
@@ -133,9 +174,6 @@ export function PhotoUploader() {
           /* resposta sem JSON: trata como sucesso */
         }
         setProgress(100);
-        // 202 = a foto foi registrada, mas o armazenamento falhou.
-        // Ela fica em fila para retry no painel — nao dizer que ja
-        // foi para o Drive.
         setQueued(body.status === "failed");
         setStep("done");
         return;
@@ -162,7 +200,7 @@ export function PhotoUploader() {
   }
 
   return (
-    <div>
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <input
         ref={fileInputRef}
         type="file"
@@ -196,8 +234,8 @@ export function PhotoUploader() {
       ) : null}
 
       {step === "camera" ? (
-        <div>
-          <div className="overflow-hidden rounded-media bg-navy-950">
+        <div className="flex flex-col">
+          <div className="relative overflow-hidden rounded-media bg-navy-950 shadow-lift">
             <video
               ref={videoRef}
               playsInline
@@ -205,19 +243,34 @@ export function PhotoUploader() {
               className="aspect-[3/4] w-full object-cover"
               aria-label="Prévia da câmera"
             />
+            
+            {/* Botão de trocar câmera - Posicionado discretamente no topo da prévia */}
+            <button
+              type="button"
+              onClick={toggleCamera}
+              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-ivory backdrop-blur-md transition hover:bg-black/60 active:scale-90"
+              title="Trocar câmera"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12a9 9 0 0 0-9-9 9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9Z"/>
+                <path d="M21 3v6h-6"/>
+                <path d="M3 21v-6h6"/>
+                <path d="M21 12H9"/>
+              </svg>
+            </button>
           </div>
           <div className="mt-4 flex items-center gap-3">
             <button
               type="button"
               onClick={reset}
-              className="flex-1 rounded-full border border-navy-900/20 px-5 py-4 text-xs uppercase tracking-[0.18em] text-navy-800/70"
+              className="flex-1 rounded-full border border-navy-900/20 px-5 py-4 text-xs uppercase tracking-[0.18em] text-navy-800/70 transition hover:bg-navy-900/5"
             >
               Voltar
             </button>
             <button
               type="button"
               onClick={capture}
-              className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory transition active:scale-[0.98]"
+              className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory transition active:scale-[0.98] shadow-soft"
             >
               Tirar foto
             </button>
@@ -226,12 +279,12 @@ export function PhotoUploader() {
       ) : null}
 
       {step === "preview" || step === "uploading" ? (
-        <div>
+        <div className="animate-in fade-in duration-500">
           {preview ? (
             <img
               src={preview}
               alt="Prévia da foto que você vai enviar"
-              className="aspect-[4/5] w-full rounded-media border border-navy-900/10 object-cover"
+              className="aspect-[4/5] w-full rounded-media border border-navy-900/10 object-cover shadow-soft"
             />
           ) : null}
           {step === "uploading" ? (
@@ -251,14 +304,14 @@ export function PhotoUploader() {
               <button
                 type="button"
                 onClick={reset}
-                className="flex-1 rounded-full border border-navy-900/20 px-5 py-4 text-xs uppercase tracking-[0.18em] text-navy-800/70"
+                className="flex-1 rounded-full border border-navy-900/20 px-5 py-4 text-xs uppercase tracking-[0.18em] text-navy-800/70 transition hover:bg-navy-900/5"
               >
                 Refazer
               </button>
               <button
                 type="button"
                 onClick={upload}
-                className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory transition active:scale-[0.98]"
+                className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory transition active:scale-[0.98] shadow-soft"
               >
                 Enviar foto
               </button>
@@ -273,7 +326,7 @@ export function PhotoUploader() {
       ) : null}
 
       {step === "done" ? (
-        <div className="text-center">
+        <div className="text-center animate-in zoom-in-95 duration-500">
           <p className="text-sm uppercase tracking-[0.2em] text-gold-700">
             {queued ? "Foto recebida" : "Foto enviada"}
           </p>
