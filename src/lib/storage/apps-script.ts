@@ -101,8 +101,11 @@ export const appsScriptStorage: PhotoStorage = {
     }
     try {
       const body = await call({ action: "health" }, 20_000);
+      // O script devolve o nome da pasta. Contar arquivos exigiria percorrer o
+      // FileIterator inteiro a cada checagem, entao nao vale o custo.
+      const folder = String(body.folder ?? "").trim();
       return body.ok === true
-        ? { ok: true, message: `Ponte do Drive ativa (${String(body.count ?? "?")} fotos).` }
+        ? { ok: true, message: `Ponte do Drive ativa${folder ? ` em "${folder}"` : ""}.` }
         : { ok: false, message: String(body.message ?? "Apps Script respondeu sem ok.") };
     } catch (error) {
       return { ok: false, message: `Ponte do Drive inacessível: ${(error as Error).message}` };
