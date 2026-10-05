@@ -30,6 +30,9 @@ export async function createAdminSession() {
   const token = crypto.randomBytes(32).toString("base64url");
   const tokenHash = hashSecret(token);
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  // Cada login reaproveita a limpeza: sessoes expiradas
+  // nao se acumulam na tabela.
+  await purgeExpiredSessions();
   await run(`INSERT INTO admin_sessions (token_hash, expires_at) VALUES ($1, $2)`, [
     tokenHash,
     expiresAt.toISOString(),
@@ -75,7 +78,7 @@ export async function setSessionCookie(token: string, expiresAt: Date) {
 
 export async function clearSessionCookie() {
   const token = await getAdminSessionToken();
-  if (token) deleteAdminSession(token);
+  if (token) await deleteAdminSession(token);
   const store = await cookies();
   store.set(COOKIE_NAME, "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
 }
