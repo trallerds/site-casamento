@@ -23,9 +23,8 @@ export function StartGiftButton({ giftId, slug }: { giftId: number; slug: string
       }
       router.push(`/presentes/${slug}/pix?p=${body.publicId}`);
     } catch (error) {
-      setState("error");
       setMessage((error as Error).message);
-      setState("idle");
+      setState("error");
     }
   }
 
@@ -43,7 +42,6 @@ export function StartGiftButton({ giftId, slug }: { giftId: number; slug: string
         <p role="alert" className="mt-3 text-center text-sm text-gold-700">
           {message}
         </p>
-      ) : null}
-    </div>
+      ) : null}    </div>
   );
 }
