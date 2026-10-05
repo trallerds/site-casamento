@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           <p className="mt-2">
             As fotos enviadas ficam armazenadas na conta de Google Drive das noivas, em uma pasta
             privada. Elas não são publicadas neste site nem em redes sociais. As noivas decidem, depois,
-            o que decide compartilhar. Fotos podem ser excluídas a qualquer momento, a pedido de quem
+            o que desejam compartilhar. Fotos podem ser excluídas a qualquer momento, a pedido de quem
             aparece nelas.
           </p>
         </section>

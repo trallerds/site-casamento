@@ -49,10 +49,10 @@ export default async function GiftDetailPage({ params }: { params: Promise<{ slu
           <div className="rule-gold my-7" />
 
           <p className="font-display text-2xl text-navy-900">{formatBRL(gift.amount_cents)}</p>
-          <p className="mt-1 text-xs text-navy-800/55">
-            Valor sugerido para este presente. Se quiser contribuir com outro valor, fale com a gente
-            no dia.
-          </p>
+           <p className="mt-1 text-xs text-navy-800/55">
+             Contribuição sugerida para este presente. O mais importante é o carinho. 💙
+           </p>
+
 
           <div className="mt-8">
             {available ? (

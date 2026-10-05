@@ -25,11 +25,6 @@ export function GiftCard({ gift }: { gift: GiftRow }) {
             Presentear
           </span>
         </div>
-        {gift.total_quantity > 1 ? (
-          <p className="mt-1 text-[0.7rem] uppercase tracking-wider text-navy-800/40 font-body">
-            {gift.total_quantity - gift.sold_quantity} de {gift.total_quantity} cotas disponíveis
-          </p>
-        ) : null}
       </div>
     </Link>
   );
