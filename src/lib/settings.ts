@@ -1,9 +1,15 @@
+import { cache } from "react";
 import { run, sql } from "@/lib/db";
 
-export async function getSetting(key: string): Promise<string | null> {
+/**
+ * cache() do React deduplica leituras de settings dentro da mesma
+ * requisicao: cabecalho, rodape e metadata liam wedding_names, e
+ * o provedor Pix le pix_key — sem isso, cada chamada e uma query.
+ */
+export const getSetting = cache(async (key: string): Promise<string | null> => {
   const [row] = await sql<{ value: string }>(`SELECT value FROM settings WHERE key = $1`, [key]);
   return row?.value ?? null;
-}
+});
 
 export async function getSettings(): Promise<Record<string, string>> {
   const rows = await sql<{ key: string; value: string }>(`SELECT key, value FROM settings`);
@@ -25,7 +31,6 @@ export const SETTING_KEYS = [
   "story_title",
   "story_text",
   "pix_recipient_name",
-  "site_active",
   "pix_provider",
   "photo_storage",
   "pix_key_payload",
@@ -33,6 +38,7 @@ export const SETTING_KEYS = [
   "pix_recipient_city",
   "pix_provider_config",
   "google_drive_config",
+  "google_drive_folder_id",
 ] as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[number];
