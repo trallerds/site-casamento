@@ -1,27 +1,28 @@
 import { cache } from "react";
-import { run, sql } from "@/lib/db";
+import { getDb } from "@/db";
+import { settings } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
 
-/**
- * cache() do React deduplica leituras de settings dentro da mesma
- * requisicao: cabecalho, rodape e metadata liam wedding_names, e
- * o provedor Pix le pix_key — sem isso, cada chamada e uma query.
- */
 export const getSetting = cache(async (key: string): Promise<string | null> => {
-  const [row] = await sql<{ value: string }>(`SELECT value FROM settings WHERE key = $1`, [key]);
+  const db = await getDb();
+  const [row] = await db.select().from(settings).where(eq(settings.key, key));
   return row?.value ?? null;
 });
 
 export async function getSettings(): Promise<Record<string, string>> {
-  const rows = await sql<{ key: string; value: string }>(`SELECT key, value FROM settings`);
+  const db = await getDb();
+  const rows = await db.select().from(settings);
   return Object.fromEntries(rows.map((row) => [row.key, row.value]));
 }
 
 export async function setSetting(key: string, value: string) {
-  await run(
-    `INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, now())
-     ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = now()`,
-    [key, value],
-  );
+  const db = await getDb();
+  await db.insert(settings)
+    .values({ key, value })
+    .onConflictDoUpdate({
+      target: settings.key,
+      set: { value, updatedAt: sql`now()` },
+    });
 }
 
 export const SETTING_KEYS = [
