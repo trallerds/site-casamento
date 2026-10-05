@@ -1,5 +1,5 @@
 import React from "react";
-import { GIFT_ART } from "./registry";
+import { GIFT_ART } from "./art/registry";
 
 interface GiftArtProps {
   imageKey: string;
