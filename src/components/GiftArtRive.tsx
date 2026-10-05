@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { useRive, Layout, Fit, Alignment } from "@rive-app/react-canvas";
 import { GIFT_ART, resolveArtKey } from "./gifts/art/registry";
@@ -26,8 +28,6 @@ export function GiftArtRive({
     src: artConfig.src,
     autoplay: true,
     layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
-    onLoad: () => setHasError(false),
-    onError: () => setHasError(true),
   });
 
   const bgColors: Record<string, string> = {
