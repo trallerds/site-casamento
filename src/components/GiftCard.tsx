@@ -10,7 +10,10 @@ export function GiftCard({ gift }: { gift: GiftRow }) {
       className="group flex flex-col overflow-hidden rounded-card border border-navy-900/10 bg-white shadow-soft transition-all duration-500 hover:-translate-y-2 hover:shadow-lift active:scale-[0.98]"
     >
       <div className="relative overflow-hidden">
-        <GiftArt name={gift.name} category={gift.category} className="aspect-[4/3] w-full transition-transform duration-700 group-hover:scale-110" />
+        <GiftArt 
+          imageKey={gift.image_key} 
+          className="aspect-[4/3] w-full transition-transform duration-700 group-hover:scale-110" 
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-900/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
       </div>
       <div className="flex flex-1 flex-col gap-3 p-6">
