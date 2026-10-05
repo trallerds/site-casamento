@@ -8,6 +8,13 @@ export type BrCodeInput = {
 
 const CRC_TAG = "6304";
 
+/**
+ * O BACCT do Pix exige o template em minusculas, literal. Reader que compara
+ * a string ignorando caixa aceita as duas, mas os que comparam byte a byte
+ * rejeitam "BR.GOV.BCB.PIX" — e o banco emissor sempre escreve minusculo.
+ */
+const PIX_TEMPLATE = "br.gov.bcb.pix";
+
 function tlv(id: string, value: string) {
   return `${id}${String(value.length).padStart(2, "0")}${value}`;
 }
@@ -32,6 +39,23 @@ function sanitize(value: string, max: number) {
     .slice(0, max);
 }
 
+/**
+ * Campo 59 (nome do recebedor): EMV quer letra e digito, em maiuscula. O "&"
+ * dos nomes de casal nao existe no alfabeto aceito por reader de Pix e quebra o
+ * QR em app que valida a tabela de caracteres. Vira espaco, nao some, para nao
+ * colar palavras ("Jessica & Jennifer" -> "JESSICA JENNIFER").
+ */
+function pixName(value: string) {
+  return (
+    sanitize(value, 100)
+      .toUpperCase()
+      .replace(/[^A-Z0-9 ]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 25) || "RECEBEDOR"
+  );
+}
+
 export function formatAmount(amountCents: number) {
   return (amountCents / 100).toFixed(2);
 }
@@ -40,11 +64,11 @@ export function buildBrCode(input: BrCodeInput) {
   const key = input.key.trim();
   if (!key) throw new Error("Chave Pix vazia");
 
-  const name = sanitize(input.recipientName, 25) || "RECEBEDOR";
-  const city = sanitize(input.city ?? "SAO PAULO", 15) || "SAO PAULO";
+  const name = pixName(input.recipientName);
+  const city = (sanitize(input.city ?? "SAO PAULO", 15).toUpperCase() || "SAO PAULO").slice(0, 15);
   const txid = sanitize(input.txid, 25);
 
-  const merchantAccount = tlv("00", "BR.GOV.BCB.PIX") + tlv("01", key);
+  const merchantAccount = tlv("00", PIX_TEMPLATE) + tlv("01", key);
   const additional = txid ? tlv("05", txid) : "";
 
   let payload = tlv("00", "01");
