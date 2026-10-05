@@ -197,7 +197,7 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
         type="button"
         onClick={copy}
         disabled={copyState === "loading"}
-        className="mt-6 w-full rounded-full bg-navy-900 px-8 py-5 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 disabled:opacity-60"
+        className="mt-6 w-full rounded-full bg-navy-900 px-8 py-5 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 active:scale-[0.98] disabled:opacity-60"
       >
         {copyState === "loading"
           ? "Gerando o Pix…"
@@ -233,7 +233,7 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
               manualRef.current?.select();
               if (legacyCopy(pixCode)) setMessage("Pix copiado!");
             }}
-            className="mt-3 w-full rounded-full border border-navy-900/25 px-5 py-3 text-xs uppercase tracking-[0.18em] text-navy-900"
+            className="mt-3 w-full rounded-full border border-navy-900/25 px-5 py-3 text-xs uppercase tracking-[0.18em] text-navy-900 transition active:scale-[0.98]"
           >
             Selecionar e copiar
           </button>

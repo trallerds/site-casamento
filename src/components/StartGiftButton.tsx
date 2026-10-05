@@ -34,7 +34,7 @@ export function StartGiftButton({ giftId, slug }: { giftId: number; slug: string
         type="button"
         onClick={start}
         disabled={state === "loading"}
-        className="w-full rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 disabled:opacity-60"
+        className="w-full rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 active:scale-[0.98] disabled:opacity-60"
       >
         {state === "loading" ? "Preparando seu Pix…" : "Quero presentear"}
       </button>

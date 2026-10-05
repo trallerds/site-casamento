@@ -176,14 +176,14 @@ export function PhotoUploader() {
           <button
             type="button"
             onClick={openCamera}
-            className="w-full rounded-full bg-navy-900 px-8 py-5 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800"
+            className="w-full rounded-full bg-navy-900 px-8 py-5 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 active:scale-[0.98]"
           >
             Abrir câmera
           </button>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full rounded-full border border-navy-900/25 px-8 py-5 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700"
+            className="w-full rounded-full border border-navy-900/25 px-8 py-5 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700 active:scale-[0.98]"
           >
             Escolher uma foto
           </button>
@@ -217,7 +217,7 @@ export function PhotoUploader() {
             <button
               type="button"
               onClick={capture}
-              className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory"
+              className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory transition active:scale-[0.98]"
             >
               Tirar foto
             </button>
@@ -258,7 +258,7 @@ export function PhotoUploader() {
               <button
                 type="button"
                 onClick={upload}
-                className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory"
+                className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory transition active:scale-[0.98]"
               >
                 Enviar foto
               </button>
@@ -288,7 +288,7 @@ export function PhotoUploader() {
           <button
             type="button"
             onClick={reset}
-            className="mt-7 w-full rounded-full border border-navy-900/25 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700"
+            className="mt-7 w-full rounded-full border border-navy-900/25 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700 active:scale-[0.98]"
           >
             Enviar outra
           </button>
