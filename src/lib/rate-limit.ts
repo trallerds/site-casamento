@@ -3,24 +3,35 @@ import { run, sql } from "@/lib/db";
 export type RateLimitResult = { allowed: boolean; retryAfterSeconds: number; remaining: number };
 
 /**
- * Contador de janela fixa no Postgres: sobrevive a cold start e e compartilhado
- * entre as instancias da Vercel, ao contrario de um Map em memoria.
+ * Contador de janela fixa no Postgres: sobrevive a cold start e e
+ * compartilhado entre as instancias da Vercel, ao contrario de um
+ * Map em memoria.
  *
- * ponytail: janela fixa permite ate 2x o limite na virada da janela. Troque por
- * janela movel ou Redis se aparecer abuso de verdade.
+ * A janela e calculada aqui em segundos e passada como parametro:
+ * o epoch do Postgres e em segundos, e misturar com a janela em
+ * milissegundos gerava janelas de ~41 dias em vez de 1 hora --
+ * num WiFi de festa, 20 fotos bloqueavam todos por semanas.
+ *
+ * ponytail: janela fixa permite ate 2x o limite na virada da
+ * janela. Troque por janela movel ou Redis se aparecer abuso de
+ * verdade.
  */
 export async function rateLimit(
   bucket: string,
   limit: number,
   windowMs: number,
 ): Promise<RateLimitResult> {
+  const windowSeconds = Math.max(1, Math.floor(windowMs / 1000));
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const windowStartSeconds =
+    Math.floor(nowSeconds / windowSeconds) * windowSeconds;
+
   const [row] = await sql<{ hits: number; reset_at: string }>(
     `INSERT INTO rate_limit (bucket, window_start, hits)
-     VALUES ($1, to_timestamp(floor(extract(epoch from now()) / $2) * $2), 1)
+     VALUES ($1, to_timestamp($2), 1)
      ON CONFLICT (bucket, window_start) DO UPDATE SET hits = rate_limit.hits + 1
-     RETURNING hits,
-       to_timestamp(floor(extract(epoch from now()) / $2) * $2 + $2) AS reset_at`,
-    [bucket, windowMs],
+     RETURNING hits, to_timestamp($2 + $3) AS reset_at`,
+    [bucket, windowStartSeconds, windowSeconds],
   );
 
   const hits = Number(row.hits);

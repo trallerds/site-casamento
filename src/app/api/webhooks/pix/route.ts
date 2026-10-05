@@ -50,6 +50,7 @@ export async function POST(request: Request) {
     providerEventId: event.eventId || `${event.type}:${event.providerChargeId}`,
     eventType: event.type,
     payload: rawBody.slice(0, 4000),
+    amountCents: event.amountCents,
   });
 
   return Response.json({ received: true, matched: true, applied: result.updated });

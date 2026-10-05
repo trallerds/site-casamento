@@ -13,6 +13,7 @@ export function PhotoUploader() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [cameraHint, setCameraHint] = useState("");
+  const [queued, setQueued] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -101,6 +102,7 @@ export function PhotoUploader() {
     setPreview(null);
     setProgress(0);
     setError("");
+    setQueued(false);
     setStep("choose");
     sending.current = false;
   }
@@ -124,7 +126,17 @@ export function PhotoUploader() {
     request.addEventListener("load", () => {
       sending.current = false;
       if (request.status >= 200 && request.status < 300) {
+        let body: { status?: string } = {};
+        try {
+          body = JSON.parse(request.responseText) as { status?: string };
+        } catch {
+          /* resposta sem JSON: trata como sucesso */
+        }
         setProgress(100);
+        // 202 = a foto foi registrada, mas o armazenamento falhou.
+        // Ela fica em fila para retry no painel — nao dizer que ja
+        // foi para o Drive.
+        setQueued(body.status === "failed");
         setStep("done");
         return;
       }
@@ -164,14 +176,14 @@ export function PhotoUploader() {
           <button
             type="button"
             onClick={openCamera}
-            className="w-full rounded-full bg-navy-900 px-8 py-5 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800"
+            className="w-full rounded-full bg-navy-900 px-8 py-5 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 active:scale-[0.98]"
           >
             Abrir câmera
           </button>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full rounded-full border border-navy-900/25 px-8 py-5 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700"
+            className="w-full rounded-full border border-navy-900/25 px-8 py-5 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700 active:scale-[0.98]"
           >
             Escolher uma foto
           </button>
@@ -205,7 +217,7 @@ export function PhotoUploader() {
             <button
               type="button"
               onClick={capture}
-              className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory"
+              className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory transition active:scale-[0.98]"
             >
               Tirar foto
             </button>
@@ -246,7 +258,7 @@ export function PhotoUploader() {
               <button
                 type="button"
                 onClick={upload}
-                className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory"
+                className="flex-[2] rounded-full bg-navy-900 px-5 py-4 text-sm uppercase tracking-[0.2em] text-ivory transition active:scale-[0.98]"
               >
                 Enviar foto
               </button>
@@ -262,15 +274,21 @@ export function PhotoUploader() {
 
       {step === "done" ? (
         <div className="text-center">
-          <p className="text-sm uppercase tracking-[0.2em] text-gold-700">Foto enviada</p>
-          <h2 className="mt-3 font-display text-2xl text-navy-900">Agora ela é nossa memória</h2>
+          <p className="text-sm uppercase tracking-[0.2em] text-gold-700">
+            {queued ? "Foto recebida" : "Foto enviada"}
+          </p>
+          <h2 className="mt-3 font-display text-2xl text-navy-900">
+            {queued ? "Guardaremos em instantes" : "Agora ela é nossa memória"}
+          </h2>
           <p className="mt-3 text-sm leading-relaxed text-navy-800/75">
-            Obrigada. Ela foi direto para o nosso Drive, sem passar por rede social.
+            {queued
+              ? "Recebemos sua foto, mas o armazenamento oscilou agora. Ela está segura com a gente e será guardada no Drive automaticamente — não precisa enviar de novo."
+              : "Obrigada. Ela foi direto para o nosso Drive, sem passar por rede social."}
           </p>
           <button
             type="button"
             onClick={reset}
-            className="mt-7 w-full rounded-full border border-navy-900/25 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700"
+            className="mt-7 w-full rounded-full border border-navy-900/25 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700 active:scale-[0.98]"
           >
             Enviar outra
           </button>

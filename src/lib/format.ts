@@ -17,10 +17,27 @@ export function parseAmountToCents(value: string | number | null | undefined): n
   return Number.isFinite(parsed) ? Math.round(parsed * 100) : null;
 }
 
+/**
+ * O pg devolve timestamptz como "2026-10-05 02:10:29.999739+00".
+ * Virar "T" e colar "Z" no final gera "+00Z", que o Date rejeita —
+ * por isso o offset de 2 digitos vira 4 ("+00" -> "+0000") e o Z
+ * so entra quando a string nao tem offset nenhum.
+ */
+function normalizeSqlDate(sqlDate: string) {
+  if (sqlDate.includes("T")) return sqlDate;
+  const withTime = sqlDate.replace(" ", "T").replace(/([+-]\d{2})$/, "$100");
+  return /[+-]\d{4}$/i.test(withTime) ? withTime : `${withTime}Z`;
+}
+
+export function toIso(sqlDate: string | null): string | null {
+  if (!sqlDate) return null;
+  const date = new Date(normalizeSqlDate(sqlDate));
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 export function formatDateTime(sqlDate: string | null) {
   if (!sqlDate) return "—";
-  const normalized = sqlDate.includes("T") ? sqlDate : `${sqlDate.replace(" ", "T")}Z`;
-  const date = new Date(normalized);
+  const date = new Date(normalizeSqlDate(sqlDate));
   if (Number.isNaN(date.getTime())) return sqlDate;
   return date.toLocaleString("pt-BR", {
     day: "2-digit",
@@ -28,6 +45,9 @@ export function formatDateTime(sqlDate: string | null) {
     year: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    // O banco guarda em UTC; as noivas querem ver o horario
+    // do casamento, independente do timezone do servidor.
+    timeZone: "America/Sao_Paulo",
   });
 }
 

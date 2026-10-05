@@ -23,9 +23,8 @@ export function StartGiftButton({ giftId, slug }: { giftId: number; slug: string
       }
       router.push(`/presentes/${slug}/pix?p=${body.publicId}`);
     } catch (error) {
-      setState("error");
       setMessage((error as Error).message);
-      setState("idle");
+      setState("error");
     }
   }
 
@@ -35,7 +34,7 @@ export function StartGiftButton({ giftId, slug }: { giftId: number; slug: string
         type="button"
         onClick={start}
         disabled={state === "loading"}
-        className="w-full rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 disabled:opacity-60"
+        className="w-full rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 active:scale-[0.98] disabled:opacity-60"
       >
         {state === "loading" ? "Preparando seu Pix…" : "Quero presentear"}
       </button>
@@ -43,7 +42,6 @@ export function StartGiftButton({ giftId, slug }: { giftId: number; slug: string
         <p role="alert" className="mt-3 text-center text-sm text-gold-700">
           {message}
         </p>
-      ) : null}
-    </div>
+      ) : null}    </div>
   );
 }

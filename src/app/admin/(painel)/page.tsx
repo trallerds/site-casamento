@@ -7,10 +7,13 @@ import { photoStorageHealth, photoStorageName } from "@/lib/storage";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const stats = await dashboardStats();
-  const totals = await giftPaymentTotals();
-  const pix = await pixProviderHealth();
-  const storage = await photoStorageHealth();
+  const [stats, totals, pix, storage, storageMode] = await Promise.all([
+    dashboardStats(),
+    giftPaymentTotals(),
+    pixProviderHealth(),
+    photoStorageHealth(),
+    photoStorageName(),
+  ]);
 
   const cards = [
     { label: "Total recebido", value: formatBRL(stats.paid_cents), hint: `${stats.payments_paid} pagamentos confirmados` },
@@ -32,7 +35,7 @@ export default async function AdminDashboardPage() {
     <div>
       <h1 className="font-display text-2xl text-navy-900">Dashboard</h1>
 
-      {(await photoStorageName()) === "local" ? (
+      {(storageMode === "local") ? (
         <div className="mt-5 rounded-xl border border-gold-600/40 bg-gold-100/60 p-5">
           <p className="text-sm font-medium text-navy-900">
             As fotos NÃO estão indo para o Google Drive

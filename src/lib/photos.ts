@@ -62,7 +62,7 @@ export async function readAndValidatePhoto(file: File) {
   const buffer = Buffer.from(await file.arrayBuffer());
   const detected = sniffImageMime(buffer);
   if (!detected || !ALLOWED_MIME.has(detected)) {
-    throw new PhotoValidationError("Esse arquivo não é uma foto válida (JPG, PNG ou WebP).");
+    throw new PhotoValidationError("Esse arquivo não é uma foto válida (JPG, PNG, WebP ou HEIC).");
   }
   if (file.type && !ALLOWED_MIME.has(file.type)) {
     throw new PhotoValidationError("Esse tipo de arquivo não é aceito.");

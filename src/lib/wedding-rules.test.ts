@@ -5,6 +5,7 @@ import { after, before, describe, test } from "node:test";
 import { run, sql } from "./db";
 import { markPaymentPaid, registerPaymentEvent } from "./payments";
 import { listActiveGifts } from "./queries";
+import { rateLimit } from "./rate-limit";
 import { retryFailedPhoto } from "./photos";
 import { localStorage } from "./storage/local";
 
@@ -95,6 +96,45 @@ describe("webhook: idempotencia", () => {
     assert.equal(await available(giftId), 2, "cota deve ter baixado uma unica vez");
   });
 
+  test("webhook com valor divergente nao marca como pago", async () => {
+    const giftId = await newGift("test-valor", 2);
+    const paymentId = await newPayment(giftId, "e");
+
+    // O registro e 1000 centavos; o webhook diz 999.
+    const wrong = await markPaymentPaid({
+      paymentId,
+      providerEventId: "evt-valor-1",
+      eventType: "charge.paid",
+      payload: "{}",
+      amountCents: 999,
+    });
+    assert.equal(wrong.updated, false, "valor divergente nao pode confirmar");
+    assert.equal(wrong.amountMismatch, true);
+    assert.equal(await available(giftId), 2, "cota nao pode baixar com valor errado");
+
+    const [row] = await sql<{ status: string; error: string | null }>(
+      `SELECT status, error FROM payments WHERE id = $1`,
+      [paymentId],
+    );
+    assert.equal(row.status, "pending", "pagamento continua pendente");
+    assert.ok(row.error?.includes("999"), "motivo fica visivel para conciliacao");
+  });
+
+  test("webhook com valor correto baixa a cota", async () => {
+    const giftId = await newGift("test-valor-ok", 2);
+    const paymentId = await newPayment(giftId, "f");
+
+    const ok = await markPaymentPaid({
+      paymentId,
+      providerEventId: "evt-valor-ok-1",
+      eventType: "charge.paid",
+      payload: "{}",
+      amountCents: 1000,
+    });
+    assert.equal(ok.updated, true);
+    assert.equal(await available(giftId), 1);
+  });
+
   test("registerPaymentEvent guarda so um registro por evento do provedor", async () => {
     const event = {
       providerEventId: `evt-reg-${Date.now()}`,
@@ -110,6 +150,25 @@ describe("webhook: idempotencia", () => {
       [event.providerEventId],
     );
     assert.equal(row.n, 1);
+  });
+});
+
+describe("taxa: janela", () => {
+  test("limite segura na janela e reseta em ate 1 hora", async () => {
+    const bucket = `test-rate-${Date.now()}`;
+
+    const first = await rateLimit(bucket, 2, 60 * 60 * 1000);
+    const second = await rateLimit(bucket, 2, 60 * 60 * 1000);
+    assert.equal(first.allowed, true);
+    assert.equal(second.allowed, true);
+    assert.equal(second.remaining, 0);
+
+    const third = await rateLimit(bucket, 2, 60 * 60 * 1000);
+    assert.equal(third.allowed, false, "o limite precisa segurar");
+    assert.ok(
+      third.retryAfterSeconds > 1 && third.retryAfterSeconds <= 3600,
+      `reset deve ser ate 1 hora, foi ${third.retryAfterSeconds}s`,
+    );
   });
 });
 
@@ -146,7 +205,20 @@ describe("foto: retry", () => {
 after(async () => {
   await fs.rm(path.join(process.cwd(), "data", "staging"), { recursive: true, force: true });
   await run(`DELETE FROM photo_uploads WHERE public_id LIKE 'test-retry-%'`);
-  await run(`DELETE FROM payment_events WHERE provider_event_id LIKE 'evt-%'`);
+  // Pagamentos de teste podem vir de qualquer provider (o
+  // ensaio cria os dele via API), entao a limpeza apaga
+  // primeiro pelos gifts de teste, senao a FK de payments
+  // trava o DELETE dos gifts e o residuo se acumula.
+  await run(
+    `DELETE FROM payment_events WHERE payment_id IN
+       (SELECT id FROM payments WHERE gift_id IN
+          (SELECT id FROM gifts WHERE slug LIKE 'test-%'))`,
+  );
+  await run(
+    `DELETE FROM payments WHERE gift_id IN
+       (SELECT id FROM gifts WHERE slug LIKE 'test-%')`,
+  );
   await run(`DELETE FROM payments WHERE provider = 'test'`);
   await run(`DELETE FROM gifts WHERE slug LIKE 'test-%'`);
+  await run(`DELETE FROM rate_limit WHERE bucket LIKE 'test-rate-%'`);
 });

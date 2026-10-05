@@ -20,8 +20,8 @@ const SITE_URL =
 const metadataBase = new URL(SITE_URL);
 
 export async function generateMetadata(): Promise<Metadata> {
-  const names = await weddingNames();
-  const year = (await weddingDate()).slice(0, 4) || String(new Date().getFullYear());
+  const [names, weddingDateRaw] = await Promise.all([weddingNames(), weddingDate()]);
+  const year = weddingDateRaw.slice(0, 4) || String(new Date().getFullYear());
   const title = `${names} — Nosso Dia | ${year}`;
   const description =
     "Um cantinho do nosso dia para deixar um presente, uma foto ou uma memória com a gente.";

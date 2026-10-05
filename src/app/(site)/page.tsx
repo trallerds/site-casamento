@@ -7,12 +7,15 @@ import { listActiveGifts } from "@/lib/queries";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const names = await weddingNames();
-  const date = await weddingDateLabel();
-  const gifts = (await listActiveGifts()).slice(0, 3);
-  const heroTitle = (await getSetting("hero_title")) ?? "";
-  const storyTitle = (await getSetting("story_title")) ?? "Nossa história";
-  const storyText = (await getSetting("story_text")) ?? "";
+  const [names, date, gifts, heroTitle, storyTitle, storyText] = await Promise.all([
+    weddingNames(),
+    weddingDateLabel(),
+    listActiveGifts(),
+    getSetting("hero_title"),
+    getSetting("story_title"),
+    getSetting("story_text"),
+  ]);
+  const featured = gifts.slice(0, 3);
 
   return (
     <>
@@ -67,7 +70,7 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {gifts.map((gift) => (
+          {featured.map((gift) => (
             <GiftCard key={gift.id} gift={gift} />
           ))}
         </div>

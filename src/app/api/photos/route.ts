@@ -2,6 +2,7 @@ import { sql, type PhotoUpload } from "@/lib/db";
 import { randomId } from "@/lib/format";
 import {
   createPhotoRecord,
+  maxPhotoBytes,
   PhotoValidationError,
   pushToStorage,
   readAndValidatePhoto,
@@ -19,6 +20,16 @@ function hourlyLimit() {
 export async function POST(request: Request) {
   const guard = await rateLimit(`photos:${clientIp(request)}`, hourlyLimit(), 60 * 60 * 1000);
   if (!guard.allowed) return tooManyRequests(guard.retryAfterSeconds);
+
+  // Rejeita antes de bufferizar: sem isso um corpo gigante
+  // ocupa memoria ate o formData() terminar.
+  const declared = Number(request.headers.get("content-length") ?? 0);
+  if (Number.isFinite(declared) && declared > maxPhotoBytes() + 1024 * 1024) {
+    return Response.json(
+      { error: "Essa foto passa do tamanho máximo. Escolha uma menor." },
+      { status: 413 },
+    );
+  }
 
   let form: FormData;
   try {

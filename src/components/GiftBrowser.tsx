@@ -14,7 +14,7 @@ export function GiftBrowser({ groups }: { groups: Group[] }) {
   return (
     <div>
       <div className="-mx-5 overflow-x-auto px-5 pb-1 md:mx-0 md:px-0">
-        <div role="tablist" aria-label="Categorias de presentes" className="flex w-max gap-2">
+        <div role="group" aria-label="Filtrar por categoria" className="flex w-max gap-2">
           <CategoryChip active={active === null} onClick={() => setActive(null)}>
             Todos
           </CategoryChip>
@@ -53,8 +53,7 @@ function CategoryChip({
   return (
     <button
       type="button"
-      role="tab"
-      aria-selected={active}
+      aria-pressed={active}
       onClick={onClick}
       className={`whitespace-nowrap rounded-full border px-4 py-2 text-xs uppercase tracking-[0.16em] transition ${
         active

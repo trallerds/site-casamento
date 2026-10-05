@@ -156,7 +156,12 @@ export async function cancelPaymentAction(formData: FormData) {
   await requireAdmin();
   const id = Number(field(formData, "id"));
   if (!id) return;
-  await run(`UPDATE payments SET status = 'cancelled', updated_at = now() WHERE id = $1`, [id]);
+  // Pago nao se cancela: o dinheiro ja entrou.
+  await run(
+    `UPDATE payments SET status = 'cancelled', updated_at = now()
+     WHERE id = $1 AND status <> 'paid'`,
+    [id],
+  );
   revalidatePath("/admin/pagamentos");
   revalidatePath("/admin");
 }

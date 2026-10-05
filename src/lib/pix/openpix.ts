@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { getSetting } from "@/lib/settings";
 import { PixError, type PixCharge, type PixChargeRequest, type PixEvent, type PixProvider } from "./types";
 
@@ -29,6 +30,16 @@ async function config() {
   const baseUrl = (process.env.OPENPIX_BASE_URL || "https://api.openpix.dev/v1").replace(/\/$/, "");
   const webhookToken = (process.env.OPENPIX_WEBHOOK_TOKEN || "").trim();
   return { apiKey, baseUrl, webhookToken };
+}
+
+/** Comparacao em tempo constante: o token do webhook nao vaza por tempo. */
+function tokenMatches(provided: string, expected: string) {
+  const given = Buffer.from(provided);
+  const want = Buffer.from(expected);
+  if (given.length === 0 || want.length === 0 || given.length !== want.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(given, want);
 }
 
 export const openPixProvider: PixProvider = {
@@ -80,7 +91,7 @@ export const openPixProvider: PixProvider = {
       request.headers.get("x-webhook-id") ??
       request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
       "";
-    if (provided !== webhookToken) return null;
+    if (!tokenMatches(provided, webhookToken)) return null;
 
     let payload: OpenPixWebhookPayload;
     try {

@@ -74,7 +74,13 @@ export async function markPaymentPaid(options: {
   providerEventId: string;
   eventType: string;
   payload: string;
-}): Promise<{ alreadyProcessed: boolean; updated: boolean; sale: SaleResult | null }> {
+  amountCents?: number | null;
+}): Promise<{
+  alreadyProcessed: boolean;
+  updated: boolean;
+  sale: SaleResult | null;
+  amountMismatch?: boolean;
+}> {
   return tx(async (client) => {
     const inserted = await client.query(
       `INSERT INTO payment_events
@@ -94,6 +100,23 @@ export async function markPaymentPaid(options: {
 
     if (!payment || payment.status === "paid") {
       return { alreadyProcessed: false, updated: false, sale: null };
+    }
+
+    // O valor verdadeiro e o do banco, nao o que o front-end manda.
+    // Webhook com valor divergente nao baixa cota: fica visivel no
+    // painel (error) para conciliacao manual.
+    if (
+      options.amountCents != null &&
+      Number(options.amountCents) !== payment.amount_cents
+    ) {
+      await client.query(
+        `UPDATE payments SET error = $2, updated_at = now() WHERE id = $1`,
+        [
+          payment.id,
+          `Webhook reportou ${Number(options.amountCents)} centavos, esperados ${payment.amount_cents}. Confirmado manualmente?`,
+        ],
+      );
+      return { alreadyProcessed: false, updated: false, sale: null, amountMismatch: true };
     }
 
     await client.query(

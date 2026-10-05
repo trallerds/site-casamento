@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CallLily } from "@/components/Botanical";
 import { PhotoUploader } from "@/components/PhotoUploader";
+import { maxPhotoBytes } from "@/lib/photos";
 
 export const metadata: Metadata = {
   title: "Deixar uma foto",
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default function PhotosPage() {
+  const maxMB = Math.round(maxPhotoBytes() / (1024 * 1024));
+
   return (
     <div className="mx-auto max-w-md pt-6">
       <header className="text-center">
@@ -27,7 +30,7 @@ export default function PhotosPage() {
       </div>
 
       <p className="mt-5 text-center text-xs text-navy-800/50">
-        Formatos aceitos: JPG, PNG e WebP, até 15 MB. Sem cadastro, sem app.
+        Formatos aceitos: JPG, PNG, WebP e HEIC, até {maxMB} MB. Sem cadastro, sem app.
       </p>
     </div>
   );

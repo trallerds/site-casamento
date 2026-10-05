@@ -10,6 +10,7 @@ export type PixPaymentView = {
   pixAvailable: boolean;
   claimed: boolean;
   confirmHref: string;
+  expiresAt: string | null;
 };
 
 type CopyState = "idle" | "loading" | "copied" | "manual";
@@ -25,6 +26,15 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
   const manualRef = useRef<HTMLTextAreaElement | null>(null);
 
   const isPending = status === "pending";
+
+  // Cobranca com prazo real (OpenPix): depois da validade o
+  // banco recusa o codigo, entao mostramos o estado expirado
+  // mesmo enquanto o registro ainda diz "pending".
+  const isExpired =
+    status === "expired" ||
+    (isPending &&
+      payment.expiresAt != null &&
+      Date.now() > Date.parse(payment.expiresAt));
 
   const ensureCode = useCallback(async () => {
     if (pixCode) return pixCode;
@@ -128,12 +138,12 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
   const claim = useCallback(async () => {
     setClaiming(true);
     try {
-      await fetch(`/api/payments/${payment.publicId}/manual-confirmation`, { method: "POST" });
+      const response = await fetch(`/api/payments/${payment.publicId}/manual-confirmation`, { method: "POST" });
+      if (response.ok) setClaimed(true);
     } catch {
       /* a confirmação manual é apenas um registro */
     } finally {
       setClaiming(false);
-      setClaimed(true);
     }
   }, [payment.publicId]);
 
@@ -157,7 +167,7 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
     );
   }
 
-  if (!isPending) {
+  if (!isPending || isExpired) {
     return (
       <div className="text-center">
         <h2 className="font-display text-2xl text-navy-900">
@@ -187,7 +197,7 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
         type="button"
         onClick={copy}
         disabled={copyState === "loading"}
-        className="mt-6 w-full rounded-full bg-navy-900 px-8 py-5 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 disabled:opacity-60"
+        className="mt-6 w-full rounded-full bg-navy-900 px-8 py-5 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 active:scale-[0.98] disabled:opacity-60"
       >
         {copyState === "loading"
           ? "Gerando o Pix…"
@@ -223,7 +233,7 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
               manualRef.current?.select();
               if (legacyCopy(pixCode)) setMessage("Pix copiado!");
             }}
-            className="mt-3 w-full rounded-full border border-navy-900/25 px-5 py-3 text-xs uppercase tracking-[0.18em] text-navy-900"
+            className="mt-3 w-full rounded-full border border-navy-900/25 px-5 py-3 text-xs uppercase tracking-[0.18em] text-navy-900 transition active:scale-[0.98]"
           >
             Selecionar e copiar
           </button>
@@ -233,7 +243,7 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
       <div className="mt-8 hidden justify-center md:flex">
         {pixCode ? (
         <figure className="rounded-xl border border-navy-900/10 bg-white p-4">
-          <canvas ref={canvasRef} aria-label="QR Code do Pix" />
+          <canvas ref={canvasRef} role="img" aria-label="QR Code do Pix" />
           <figcaption className="mt-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-navy-800/50">
             Ou leia com a câmera do banco
           </figcaption>
@@ -252,7 +262,7 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
         </button>
         <p className="mt-3 text-xs leading-relaxed text-navy-800/50">
           Esse botão não confirma o pagamento: ele só avisa as noivas de que você já pagou, para
-          conference mais rápida. A confirmação real é sempre a do banco.
+          conferência mais rápida. A confirmação real é sempre a do banco.
         </p>
       </div>
     </div>

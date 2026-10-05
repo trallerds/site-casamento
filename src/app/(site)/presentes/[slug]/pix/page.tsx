@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GiftArt } from "@/components/GiftArt";
 import { PixPanel } from "@/components/PixPanel";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, toIso } from "@/lib/format";
 import { findGiftBySlug, findPaymentByPublicId } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -53,7 +53,7 @@ export default async function PixPage({
 
       <div className="mt-5 overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-soft">
         <div className="border-b border-navy-900/8 bg-ivory px-6 py-6 text-center">
-          <GiftArt imageKey={gift.image_key} name={gift.name} className="mx-auto h-24 w-24 rounded-lg" />
+          <GiftArt name={gift.name} category={gift.category} className="mx-auto h-24 w-24 rounded-lg" />
           <p className="mt-4 text-[0.65rem] uppercase tracking-[0.24em] text-navy-800/55">
             Seu presente
           </p>
@@ -69,6 +69,10 @@ export default async function PixPage({
               pixAvailable: Boolean(payment.pix_code),
               claimed: Boolean(payment.claimed_at),
               confirmHref: `/presentes/${gift.slug}/confirmacao?p=${payment.public_id}`,
+              expiresAt:
+                payment.provider === "openpix"
+                  ? toIso(payment.expires_at)
+                  : null,
             }}
           />
         </div>
