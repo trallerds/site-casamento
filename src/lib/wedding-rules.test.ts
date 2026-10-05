@@ -95,6 +95,45 @@ describe("webhook: idempotencia", () => {
     assert.equal(await available(giftId), 2, "cota deve ter baixado uma unica vez");
   });
 
+  test("webhook com valor divergente nao marca como pago", async () => {
+    const giftId = await newGift("test-valor", 2);
+    const paymentId = await newPayment(giftId, "e");
+
+    // O registro e 1000 centavos; o webhook diz 999.
+    const wrong = await markPaymentPaid({
+      paymentId,
+      providerEventId: "evt-valor-1",
+      eventType: "charge.paid",
+      payload: "{}",
+      amountCents: 999,
+    });
+    assert.equal(wrong.updated, false, "valor divergente nao pode confirmar");
+    assert.equal(wrong.amountMismatch, true);
+    assert.equal(await available(giftId), 2, "cota nao pode baixar com valor errado");
+
+    const [row] = await sql<{ status: string; error: string | null }>(
+      `SELECT status, error FROM payments WHERE id = $1`,
+      [paymentId],
+    );
+    assert.equal(row.status, "pending", "pagamento continua pendente");
+    assert.ok(row.error?.includes("999"), "motivo fica visivel para conciliacao");
+  });
+
+  test("webhook com valor correto baixa a cota", async () => {
+    const giftId = await newGift("test-valor-ok", 2);
+    const paymentId = await newPayment(giftId, "f");
+
+    const ok = await markPaymentPaid({
+      paymentId,
+      providerEventId: "evt-valor-ok-1",
+      eventType: "charge.paid",
+      payload: "{}",
+      amountCents: 1000,
+    });
+    assert.equal(ok.updated, true);
+    assert.equal(await available(giftId), 1);
+  });
+
   test("registerPaymentEvent guarda so um registro por evento do provedor", async () => {
     const event = {
       providerEventId: `evt-reg-${Date.now()}`,

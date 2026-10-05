@@ -62,6 +62,11 @@ export default async function AdminPaymentsPage() {
                     {payment.claimed_at && payment.status !== "paid" ? (
                       <p className="mt-1 text-[0.65rem] text-gold-700">Convidado disse que pagou</p>
                     ) : null}
+                    {payment.error ? (
+                      <p className="mt-1 text-[0.65rem] font-medium text-gold-700">
+                        {payment.error}
+                      </p>
+                    ) : null}
                     {payment.oversold === 1 ? (
                       <p className="mt-1 text-[0.65rem] font-medium text-navy-900">
                         Pago depois das cotas acabarem — definir com o convidado

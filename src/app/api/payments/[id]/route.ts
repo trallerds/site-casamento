@@ -1,4 +1,5 @@
 import { findPaymentByPublicId } from "@/lib/queries";
+import { toIso } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +15,12 @@ export async function GET(
     {
       status: payment.status,
       claimed: Boolean(payment.claimed_at),
-      createdAt: payment.created_at,
-      paidAt: payment.paid_at,
+      createdAt: toIso(payment.created_at),
+      paidAt: toIso(payment.paid_at),
+      // A validade real so existe no provedor com webhook: o Pix
+      // manual nunca expira no banco, entao nao mostramos prazo.
+      expiresAt:
+        payment.provider === "openpix" ? toIso(payment.expires_at) : null,
     },
     { headers: { "Cache-Control": "no-store" } },
   );
