@@ -18,19 +18,21 @@ export function GiftArt({
   interactive = true, 
   state = "rest" 
 }: GiftArtProps) {
-  // Resolve a chave da arte semanticamente (Banco -> Nome/Categoria -> Default)
   const { key, palette } = resolveArtKey(name || "", category || "", imageKey);
-  
   const sceneDefinition = GIFT_ART[key] || GIFT_ART["default"];
   const SceneComponent = sceneDefinition.component;
 
+  // Mapeamento de cores de fundo mais contrastantes para diferenciar as cenas
+  const bgColors: Record<string, string> = {
+    "ivory-navy": "bg-navy-900/10",
+    "ivory-gold": "bg-gold-500/20",
+    "navy-ivory": "bg-navy-950/20",
+    "ivory-red-accent": "bg-red-500/10",
+    "ivory-blush": "bg-blush-500/20",
+  };
+
   return (
-    <div className={`relative w-full h-full overflow-hidden ${className} transition-colors duration-500 ${
-      palette === "ivory-navy" ? "bg-ivory/50" : 
-      palette === "ivory-gold" ? "bg-gold/20" : 
-      palette === "navy-ivory" ? "bg-navy-900/10" : 
-      "bg-blush/20"
-    }`}>
+    <div className={`relative w-full h-full overflow-hidden transition-colors duration-500 ${className} ${bgColors[palette] || "bg-ivory/50"}`}>
       <SceneComponent 
         interactive={interactive} 
         state={state} 
