@@ -2,22 +2,27 @@
  * Ponte do Casamento J&J -> Google Drive
  *
  * Publicar:
- *   1. script.google.com -> New project, colar este arquivo
- *   2. Project Settings -> Script Properties:
- *        GOOGLE_APPS_SCRIPT_SECRET = <a string longa e aleatoria>
- *      (ela fica no codigo? nao. e o que o Vercel manda no campo "secret")
+ *   1. script.google.com -> New project, colar este arquivo em Code.gs
+ *   2. Project Settings -> Script Properties -> Add:
+ *        GOOGLE_APPS_SCRIPT_SECRET = string longa e aleatoria (openssl rand -hex 32)
+ *      O mesmo valor vai no Vercel como GOOGLE_APPS_SCRIPT_SECRET.
  *   3. Deploy -> New deployment -> Web app
- *        Execute as: Me (a conta dona da pasta)
- *        Who has access: Anyone   <- obrigatorio: o fetch do Vercel e anonimo
- *   4. URL /exec vai para GOOGLE_APPS_SCRIPT_URL no Vercel
+ *        Execute as: Me
+ *        Who has access: Anyone      <- obrigatorio (o fetch do Vercel e anonimo)
+ *   4. A URL /exec vai no Vercel como GOOGLE_APPS_SCRIPT_URL
  *
- * O endpoint e de uma capability so: gravar foto na pasta. Nao expoe create,
- * move, trash nem escolha de pasta. Quem descobre a URL sem o secret nao faz nada.
+ * Superficie: save, read, health. Nada de create, move, trash ou escolha de pasta.
+ * Tudo que entra precisa do segredo compartilhado, e toda leitura e escrita e
+ * presa a FOLDER_ID -- nenhum campo do request escolhe o destino.
  */
 
 var FOLDER_ID = "1BxFLKSC8o0MezlAuuewodhnto1EMSz_o";
 var MAX_BYTES = 15 * 1024 * 1024;
 var ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+
+function prop_(name) {
+  return PropertiesService.getScriptProperties().getProperty(name);
+}
 
 function json_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(
@@ -25,18 +30,30 @@ function json_(value) {
   );
 }
 
+/**
+ * Pasta de destino. A Script Property sobrescreve o valor do codigo, para dar
+ * conta de trocar a pasta no Vercel sem precisar republicar o script. save e
+ * read tem que consultar a MESMA pasta, entao ambos usam esta funcao.
+ */
+function folderId_() {
+  return prop_("GOOGLE_DRIVE_FOLDER_ID") || FOLDER_ID;
+}
+
 function folder_() {
-  var folder = DriveApp.getFolderById(FOLDER_ID);
-  if (!folder) throw new Error("Pasta do Drive nao encontrada: " + FOLDER_ID);
-  return folder;
+  var id = folderId_();
+  try {
+    return DriveApp.getFolderById(id);
+  } catch (err) {
+    throw new Error("Pasta do Drive nao encontrada: " + id);
+  }
 }
 
 /**
- * Autorizacao: o Web App e "Anyone", entao a unica coisa que separa o nosso
- * backend de qualquer pessoa que ache a URL e o segredo compartilhado.
+ * O Web App e "Anyone", entao a unica coisa que separa o nosso backend de
+ * qualquer pessoa que ache a URL /exec e o segredo. Sem ele, 403.
  */
 function authorized_(body) {
-  var expected = PropertiesService.getScriptProperties().getProperty("GOOGLE_APPS_SCRIPT_SECRET");
+  var expected = prop_("GOOGLE_APPS_SCRIPT_SECRET");
   if (!expected) return false;
   var given = String((body && body.secret) || "");
   return given.length > 0 && given === expected;
@@ -45,19 +62,23 @@ function authorized_(body) {
 /** Trava de pasta: so mexe em arquivo que esteja dentro da pasta do casamento. */
 function fileInFolder_(id) {
   var file = DriveApp.getFileById(String(id));
+  var folderId = folderId_();
   var parents = file.getParents();
   while (parents.hasNext()) {
-    if (parents.next().getId() === FOLDER_ID) return file;
+    if (parents.next().getId() === folderId) return file;
   }
   throw new Error("arquivo fora da pasta do casamento");
 }
 
 function doPost(e) {
-  var body = JSON.parse((e && e.postData && e.postData.contents) || "{}");
-
-  if (!authorized_(body)) {
-    return json_({ ok: false, message: "nao autorizado" });
+  var body;
+  try {
+    body = JSON.parse((e && e.postData && e.postData.contents) || "{}");
+  } catch (err) {
+    return json_({ ok: false, message: "corpo nao e JSON" });
   }
+
+  if (!authorized_(body)) return json_({ ok: false, message: "nao autorizado" });
 
   try {
     if (body.action === "health") {
@@ -73,7 +94,8 @@ function doPost(e) {
       if (!bytes.length) throw new Error("arquivo vazio");
       if (bytes.length > MAX_BYTES) throw new Error("arquivo maior que o limite");
 
-      // O nome vem do servidor (publicId) e a pasta e fixa: nada do request escolhe destino.
+      // O nome vem do servidor (publicId) e a pasta e fixa: nada do request
+      // escolhe o destino, nem um folderId junto.
       var blob = Utilities.newBlob(bytes, mimeType, String(body.name || "foto.jpg"));
       var file = folder_().createFile(blob);
       file.setDescription("Foto enviada pelo convidado via Deixa Aqui");
@@ -82,14 +104,16 @@ function doPost(e) {
     }
 
     if (body.action === "read") {
-      var readFile = fileInFolder_(body.id);
-      var readBlob = readFile.getBlob();
-      if (readBlob.getBytes().length > MAX_BYTES) throw new Error("arquivo grande demais para leitura");
+      var target = fileInFolder_(body.id);
+      var blob = target.getBlob();
+      var size = blob.getBytes().length;
+      if (size > MAX_BYTES) throw new Error("arquivo grande demais para leitura");
+
       return json_({
         ok: true,
         id: String(body.id),
-        mimeType: readBlob.getContentType(),
-        bytes: Utilities.base64Encode(readBlob.getBytes()),
+        mimeType: blob.getContentType(),
+        bytes: Utilities.base64Encode(blob.getBytes()),
       });
     }
 
