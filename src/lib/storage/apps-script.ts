@@ -30,11 +30,19 @@ async function call(body: Record<string, unknown>, timeoutMs = 60_000) {
     throw new StorageError(`Apps Script respondeu ${response.status}: ${text.slice(0, 200)}`);
   }
 
+  let parsed: Record<string, unknown>;
   try {
-    return JSON.parse(text) as Record<string, unknown>;
+    parsed = JSON.parse(text) as Record<string, unknown>;
   } catch {
     throw new StorageError(`Resposta do Apps Script nao e JSON: ${text.slice(0, 200)}`);
   }
+
+  // O ContentService responde HTTP 200 mesmo em erro, entao o ok:false do
+  // script precisa virar excecao aqui para a causa real aparecer no painel.
+  if (parsed.ok === false) {
+    throw new StorageError(`Apps Script: ${String(parsed.message ?? "erro sem mensagem")}`, 502);
+  }
+  return parsed;
 }
 
 export function isAppsScriptConfigured() {
@@ -53,7 +61,7 @@ export const appsScriptStorage: PhotoStorage = {
     });
 
     const id = String(body.id ?? "");
-    if (!id) throw new StorageError("Apps Script nao devolveu o id do arquivo.");
+    if (!id) throw new StorageError("Apps Script salvou mas nao devolveu o id do arquivo.");
     return { key: id, externalId: id };
   },
 
