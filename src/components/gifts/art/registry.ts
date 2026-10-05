@@ -1,37 +1,25 @@
 import React from "react";
-import { 
-  BlanketReasonArt, 
-  FirstDinnerArt, 
-  FirstCoffeeArt, 
-  FirstBillArt, 
-  FirstTankArt, 
-  FirstPizzaArt, 
-  DefaultGiftArt 
-} from "./scenes";
 
 export type ArtKey = string;
 
-interface SceneProps {
-  interactive?: boolean;
-  state?: "rest" | "hover" | "pressed";
-}
-
-export interface Scene {
-  component: React.ComponentType<SceneProps>;
+interface Scene {
+  src: string;
   palette: string;
 }
 
 export const GIFT_ART: Record<string, Scene> = {
-  "blanket-reason": { component: BlanketReasonArt, palette: "ivory-navy" },
-  "first-dinner": { component: FirstDinnerArt, palette: "ivory-gold" },
-  "first-coffee": { component: FirstCoffeeArt, palette: "navy-ivory" },
-  "first-bill": { component: FirstBillArt, palette: "ivory-red-accent" },
-  "first-tank": { component: FirstTankArt, palette: "ivory-gold" },
-  "first-pizza": { component: FirstPizzaArt, palette: "ivory-blush" },
-  "default": { component: DefaultGiftArt, palette: "ivory-navy" },
+  "blanket-reason": { src: "/gifts/blanket-reason.riv", palette: "ivory-navy" },
+  "first-dinner": { src: "/gifts/first-dinner.riv", palette: "ivory-gold" },
+  "first-coffee": { src: "/gifts/first-coffee.riv", palette: "navy-ivory" },
+  "first-bill": { src: "/gifts/first-bill.riv", palette: "ivory-red-accent" },
+  "first-tank": { src: "/gifts/first-tank.riv", palette: "ivory-gold" },
+  "first-pizza": { src: "/gifts/first-pizza.riv", palette: "ivory-blush" },
+  "default": { src: "/gifts/default.riv", palette: "ivory-navy" },
 } as const;
 
 export function resolveArtKey(name: string, category: string, currentKey?: string): { key: string; palette: string } {
+  // Prioridade total: a chave explícita do banco.
+  // Não há mais inferência semântica ou adivinhação por categoria.
   if (currentKey && GIFT_ART[currentKey]) {
     return { key: currentKey, palette: GIFT_ART[currentKey].palette };
   }

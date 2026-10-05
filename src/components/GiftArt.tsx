@@ -1,4 +1,5 @@
 import React from "react";
+import { useRive, Layout, Fit, Alignment } from "@rive-app/react-canvas";
 import { GIFT_ART, resolveArtKey } from "./gifts/art/registry";
 
 interface GiftArtProps {
@@ -7,7 +8,6 @@ interface GiftArtProps {
   category?: string;
   className?: string;
   interactive?: boolean;
-  state?: "rest" | "hover" | "pressed";
 }
 
 export function GiftArt({ 
@@ -15,27 +15,36 @@ export function GiftArt({
   name = "", 
   category = "", 
   className = "", 
-  interactive = true, 
-  state = "rest" 
+  interactive = true 
 }: GiftArtProps) {
-  const { key, palette } = resolveArtKey(name || "", category || "", imageKey);
-  const sceneDefinition = GIFT_ART[key] || GIFT_ART["default"];
-  const SceneComponent = sceneDefinition.component;
+  const { key, palette } = resolveArtKey(name, category, imageKey);
+  const artConfig = GIFT_ART[key] || GIFT_ART["default"];
+  
+  const { rive, RiveComponent } = useRive({
+    src: artConfig.src,
+    autoplay: true,
+    layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
+  });
 
-  // Mapeamento de cores de fundo mais contrastantes para diferenciar as cenas
+  // Mapeamento de cores de fundo baseado na paleta da arte
   const bgColors: Record<string, string> = {
-    "ivory-navy": "bg-navy-900/10",
+    "ivory-navy": "bg-ivory/50",
     "ivory-gold": "bg-gold-500/20",
-    "navy-ivory": "bg-navy-950/20",
+    "navy-ivory": "bg-navy-900/10",
     "ivory-red-accent": "bg-red-500/10",
     "ivory-blush": "bg-blush-500/20",
   };
 
   return (
     <div className={`relative w-full h-full overflow-hidden transition-colors duration-500 ${className} ${bgColors[palette] || "bg-ivory/50"}`}>
-      <SceneComponent 
-        interactive={interactive} 
-        state={state} 
+      <RiveComponent 
+        className="w-full h-full" 
+        onClick={() => {
+          if (interactive && rive) {
+            // Aqui dispararíamos a State Machine do Rive
+            // rive.setTrigger("press");
+          }
+        }}
       />
     </div>
   );
