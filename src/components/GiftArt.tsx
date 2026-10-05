@@ -18,7 +18,19 @@ export function GiftArt({ imageKey, className = "" }: GiftArtProps) {
     "ivory-blush": "bg-blush-500/20",
   };
 
-  const src = imageKey ? `/gifts/${imageKey}.svg` : "/gifts/default.svg";
+  const src = imageKey ? `/gifts/${imageKey}.svg` : "///gifts/default.svg";
+
+  const animationMap: Record<string, string> = {
+    "first-bill": "art-animate-shake",
+    "blanket-reason": "art-animate-bounce",
+    "first-coffee": "art-animate-bounce",
+    "first-dinner": "art-animate-float",
+    "first-toast": "art-animate-float",
+    "first-pizza": "art-animate-float",
+    "first-tank": "art-animate-float",
+  };
+
+  const animationClass = animationMap[imageKey || "default"] || "";
 
   return (
     <div className={`relative w-full h-full overflow-hidden transition-colors duration-500 ${className} ${bgColors[palette] || "bg-ivory/50"}`}>
@@ -26,7 +38,7 @@ export function GiftArt({ imageKey, className = "" }: GiftArtProps) {
         src={src} 
         alt="Ilustração do presente" 
         fill 
-        className="object-contain p-4 transition-transform duration-700 group-hover:scale-110"
+        className={`object-contain p-4 transition-transform duration-700 group-hover:scale-110 ${animationClass ? `group-hover:${animationClass}` : ""}`}
         onError={(e) => {
           (e.target as HTMLImageElement).src = "/gifts/default.svg";
         }}
