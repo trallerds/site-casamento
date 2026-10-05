@@ -5,6 +5,7 @@ import { after, before, describe, test } from "node:test";
 import { run, sql } from "./db";
 import { markPaymentPaid, registerPaymentEvent } from "./payments";
 import { listActiveGifts } from "./queries";
+import { rateLimit } from "./rate-limit";
 import { retryFailedPhoto } from "./photos";
 import { localStorage } from "./storage/local";
 
@@ -152,6 +153,25 @@ describe("webhook: idempotencia", () => {
   });
 });
 
+describe("taxa: janela", () => {
+  test("limite segura na janela e reseta em ate 1 hora", async () => {
+    const bucket = `test-rate-${Date.now()}`;
+
+    const first = await rateLimit(bucket, 2, 60 * 60 * 1000);
+    const second = await rateLimit(bucket, 2, 60 * 60 * 1000);
+    assert.equal(first.allowed, true);
+    assert.equal(second.allowed, true);
+    assert.equal(second.remaining, 0);
+
+    const third = await rateLimit(bucket, 2, 60 * 60 * 1000);
+    assert.equal(third.allowed, false, "o limite precisa segurar");
+    assert.ok(
+      third.retryAfterSeconds > 1 && third.retryAfterSeconds <= 3600,
+      `reset deve ser ate 1 hora, foi ${third.retryAfterSeconds}s`,
+    );
+  });
+});
+
 describe("foto: retry", () => {
   test("upload que falhou volta no retry usando a copia em staging", async () => {
     const publicId = `test-retry-${Date.now()}`;
@@ -185,7 +205,20 @@ describe("foto: retry", () => {
 after(async () => {
   await fs.rm(path.join(process.cwd(), "data", "staging"), { recursive: true, force: true });
   await run(`DELETE FROM photo_uploads WHERE public_id LIKE 'test-retry-%'`);
-  await run(`DELETE FROM payment_events WHERE provider_event_id LIKE 'evt-%'`);
+  // Pagamentos de teste podem vir de qualquer provider (o
+  // ensaio cria os dele via API), entao a limpeza apaga
+  // primeiro pelos gifts de teste, senao a FK de payments
+  // trava o DELETE dos gifts e o residuo se acumula.
+  await run(
+    `DELETE FROM payment_events WHERE payment_id IN
+       (SELECT id FROM payments WHERE gift_id IN
+          (SELECT id FROM gifts WHERE slug LIKE 'test-%'))`,
+  );
+  await run(
+    `DELETE FROM payments WHERE gift_id IN
+       (SELECT id FROM gifts WHERE slug LIKE 'test-%')`,
+  );
   await run(`DELETE FROM payments WHERE provider = 'test'`);
   await run(`DELETE FROM gifts WHERE slug LIKE 'test-%'`);
+  await run(`DELETE FROM rate_limit WHERE bucket LIKE 'test-rate-%'`);
 });

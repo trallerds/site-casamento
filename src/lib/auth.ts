@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { run, sql } from "@/lib/db";
+import { purgeRateLimitBuckets } from "@/lib/rate-limit";
 
 const COOKIE_NAME = "deixa_aqui_admin";
 const SESSION_DAYS = 7;
@@ -31,8 +32,9 @@ export async function createAdminSession() {
   const tokenHash = hashSecret(token);
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
   // Cada login reaproveita a limpeza: sessoes expiradas
-  // nao se acumulam na tabela.
+  // e baldes de limite de taxa antigos nao se acumulam.
   await purgeExpiredSessions();
+  await purgeRateLimitBuckets();
   await run(`INSERT INTO admin_sessions (token_hash, expires_at) VALUES ($1, $2)`, [
     tokenHash,
     expiresAt.toISOString(),
