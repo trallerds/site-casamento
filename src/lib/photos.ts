@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { run, sql, type PhotoUpload } from "@/lib/db";
-import { getPhotoStorage } from "@/lib/storage";
+import { getPhotoStorage, type PhotoStorage } from "@/lib/storage";
 
 const STAGING_DIR = path.join(process.cwd(), "data", "staging");
 
@@ -126,8 +126,16 @@ const EXTENSION_BY_MIME: Record<string, string> = {
   "image/heif": ".heif",
 };
 
-export async function pushToStorage(photo: PhotoUpload, buffer: Buffer) {
-  const storage = await getPhotoStorage();
+/**
+ * `injected` existe para o teste exercitar um storage especifico em vez do que
+ * estiver configurado no banco. Em producao sempre cai no getPhotoStorage().
+ */
+export async function pushToStorage(
+  photo: PhotoUpload,
+  buffer: Buffer,
+  injected?: PhotoStorage,
+) {
+  const storage = injected ?? (await getPhotoStorage());
 
   let stagingKey: string | null = null;
   if (storage.name !== "local") {
@@ -171,13 +179,13 @@ export async function pushToStorage(photo: PhotoUpload, buffer: Buffer) {
   }
 }
 
-export async function retryFailedPhoto(publicId: string) {
+export async function retryFailedPhoto(publicId: string, storage?: PhotoStorage) {
   const [photo] = await sql<PhotoUpload>(`SELECT * FROM photo_uploads WHERE public_id = $1`, [
     publicId,
   ]);
   if (!photo || !photo.staging_key) return { ok: false, message: "Sem cópia local para reprocessar." };
   const buffer = await readStaged(photo.staging_key);
   if (!buffer) return { ok: false, message: "Cópia temporária não encontrada." };
-  const ok = await pushToStorage(photo, buffer);
+  const ok = await pushToStorage(photo, buffer, storage);
   return { ok, message: ok ? "Foto enviada." : "Ainda não deu certo." };
 }

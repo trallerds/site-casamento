@@ -6,6 +6,7 @@ import { run, sql } from "./db";
 import { markPaymentPaid, registerPaymentEvent } from "./payments";
 import { listActiveGifts } from "./queries";
 import { retryFailedPhoto } from "./photos";
+import { localStorage } from "./storage/local";
 
 /**
  * Regras de dinheiro do Deixa Aqui. Roda contra um banco de teste: apague as
@@ -129,7 +130,8 @@ describe("foto: retry", () => {
       [publicId, `staging/${publicId}.jpg`],
     );
 
-    const result = await retryFailedPhoto(publicId);
+    // storage explicito: o teste nao pode depender do photo_storage do banco
+    const result = await retryFailedPhoto(publicId, localStorage);
     assert.equal(result.ok, true, `retry falhou: ${result.message}`);
 
     const [row] = await sql<{ status: string; error: string | null }>(
