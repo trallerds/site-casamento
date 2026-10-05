@@ -77,11 +77,22 @@ nunca precisa de acesso à pasta.
 
 1. Em https://script.google.com, crie um projeto e cole `google-apps-script/Code.gs`.
 2. Confira o `FOLDER_ID` no topo do arquivo com a pasta de destino.
-3. **Deploy → New deployment → Web app**, com *Execute as: Me* e *Who has access: Anyone*.
-4. Copie a URL `/exec` para `GOOGLE_APPS_SCRIPT_URL` no ambiente e reinicie.
+3. Em **Project Settings → Script Properties**, crie `GOOGLE_APPS_SCRIPT_SECRET` com uma string
+   longa e aleatória (ex.: `openssl rand -hex 32`).
+4. **Deploy → New deployment → Web app**, com *Execute as: **Me*** e *Who has access: **Anyone***.
+5. Copie a URL `/exec` para `GOOGLE_APPS_SCRIPT_URL` e o mesmo segredo para
+   `GOOGLE_APPS_SCRIPT_SECRET` no ambiente, e reinicie.
 
 O Web App executa como a conta dona do script, então a autorização do Drive fica na conta das
 noivas. Quem envia a foto é o backend, nunca o convidado.
+
+*Who has access* precisa ser **Anyone**: o `fetch` do Vercel não tem sessão Google, então "Anyone
+with Google account" rejeitaria o backend. Por isso o `GOOGLE_APPS_SCRIPT_SECRET` é obrigatório —
+é ele que impede qualquer pessoa que descubra a URL `/exec` de escrever no Drive. Para girar o
+segredo, troque a Script Property e a variável do Vercel.
+
+O endpoint tem uma capacidade só: gravar foto na pasta fixa. Não expõe criação, mover, apagar nem
+escolha de pasta, e a leitura só alcança arquivos que estejam dentro da pasta do casamento.
 
 Limite conhecido: Web App do Apps Script consome a cota diária do script (90 min em conta
 `@gmail.com`) e aceita ~30 execuções simultâneas. Na prática aguenta a fotos da festa; se faltar,

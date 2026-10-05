@@ -12,16 +12,25 @@ import { StorageError, type PhotoStorage, type SaveInput, type StoredObject } fr
  */
 const ENDPOINT = () => process.env.GOOGLE_APPS_SCRIPT_URL || "";
 
+function secret() {
+  return process.env.GOOGLE_APPS_SCRIPT_SECRET || "";
+}
+
 async function call(body: Record<string, unknown>, timeoutMs = 60_000) {
   const endpoint = ENDPOINT();
   if (!endpoint) {
     throw new StorageError("GOOGLE_APPS_SCRIPT_URL ausente: a ponte do Drive nao esta configurada.", 503);
   }
+  if (!secret()) {
+    throw new StorageError("GOOGLE_APPS_SCRIPT_SECRET ausente: a ponte do Drive ficaria aberta.", 503);
+  }
 
   const response = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    // O Web App e "Anyone", entao o segredo e o que impede qualquer um de
+    // escrever no Drive das noivas achando a URL.
+    body: JSON.stringify({ ...body, secret: secret() }),
     signal: AbortSignal.timeout(timeoutMs),
   });
 
@@ -46,7 +55,7 @@ async function call(body: Record<string, unknown>, timeoutMs = 60_000) {
 }
 
 export function isAppsScriptConfigured() {
-  return Boolean(ENDPOINT());
+  return Boolean(ENDPOINT()) && Boolean(secret());
 }
 
 export const appsScriptStorage: PhotoStorage = {
@@ -65,6 +74,12 @@ export const appsScriptStorage: PhotoStorage = {
     return { key: id, externalId: id };
   },
 
+  async delete(): Promise<void> {
+    // O Web App nao expoe trash: apagar arquivo pela URL aberta seria uma
+    // capacidade a mais rodando com a conta da dona.
+    throw new StorageError("A ponte do Apps Script nao apaga arquivos.", 501);
+  },
+
   async read(key: string) {
     if (!key) return null;
     try {
@@ -77,16 +92,6 @@ export const appsScriptStorage: PhotoStorage = {
       };
     } catch {
       return null;
-    }
-  },
-
-  async delete(stored: StoredObject) {
-    const id = stored.externalId ?? stored.key;
-    if (!id) return;
-    try {
-      await call({ action: "delete", id });
-    } catch {
-      return;
     }
   },
 
