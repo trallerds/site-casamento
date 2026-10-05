@@ -584,7 +584,6 @@ const SEED_SETTINGS: Record<string, string> = {
   pix_recipient_name: "JESSICA C GONCALVES",
   pix_key: process.env.PIX_KEY || "",
   pix_recipient_city: process.env.PIX_RECIPIENT_CITY || "SAO PAULO",
-  site_active: "1",
   photo_storage: process.env.PHOTO_STORAGE || "local",
   pix_provider: process.env.PIX_PROVIDER || "manual",
   google_drive_folder_id:
@@ -605,7 +604,14 @@ export function pool(): Pool {
     scope.__deixaAquiPool = new Pool({
       connectionString,
       max: Number(process.env.DATABASE_POOL_MAX) || 4,
-      ssl: /neon\.tech/.test(connectionString) ? { rejectUnauthorized: false } : undefined,
+      // O Neon usa CA publica: a validacao padrao do Node
+      // fecha a conexao com o branch real (testado antes de
+      // ativar). Validar evita MITM na conexao com o banco;
+      // se um proxy interceptar o TLS, o erro aparece no
+      // log em vez de uma conexao silenciosamente insegura.
+      ssl: /neon\.tech/.test(connectionString)
+        ? { rejectUnauthorized: true }
+        : undefined,
     });
   }
   return scope.__deixaAquiPool;
