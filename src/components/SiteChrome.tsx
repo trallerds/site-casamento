@@ -1,13 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Mosquitinho } from "@/components/Botanical";
+import { NAV } from "@/components/nav-items";
+import { NavLinks } from "@/components/NavLinks";
 import { weddingNames } from "@/lib/settings";
-
-const NAV = [
-  { href: "/", label: "Início", icon: HomeIcon },
-  { href: "/presentes", label: "Presentes", icon: GiftIcon },
-  { href: "/fotos", label: "Fotos", icon: CameraIcon },
-];
 
 export async function SiteHeader() {
   const names = await weddingNames();
@@ -54,50 +50,7 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-navy-900/10 bg-ivory/95 backdrop-blur-md md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="mx-auto flex max-w-md items-stretch justify-around">
-        {NAV.map((item) => {
-          const Icon = item.icon;
-          return (
-            <li key={item.href} className="flex-1">
-              <Link
-                href={item.href}
-                className="flex min-h-16 flex-col items-center justify-center gap-1 py-2 text-[0.65rem] uppercase tracking-widest text-navy-800/70 transition-colors active:text-gold-700"
-              >
-                <Icon className="h-5 w-5" />
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <NavLinks />
     </nav>
-  );
-}
-
-function HomeIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.4">
-      <path d="M4 11l8-6 8 6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M6.5 10.5V19h11v-8.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function GiftIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.4">
-      <rect x="4" y="9" width="16" height="10" rx="1.2" />
-      <path d="M4 13h16M12 9v10" strokeLinecap="round" />
-      <path d="M12 9c-2.5 0-4.5-.6-4.5-2.2C7.5 5.6 8.6 5 9.6 5c1.4 0 2.4 1.8 2.4 4zM12 9c2.5 0 4.5-.6 4.5-2.2 0-1.2-1.1-1.8-2.1-1.8-1.4 0-2.4 1.8-2.4 4z" />
-    </svg>
-  );
-}
-
-function CameraIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.4">
-      <path d="M4 8h3l1.5-2h7L17 8h3v11H4z" strokeLinejoin="round" />
-      <circle cx="12" cy="13" r="3.2" />
-    </svg>
   );
 }
