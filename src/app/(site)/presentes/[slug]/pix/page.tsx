@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GiftArt } from "@/components/GiftArt";
+import { GiftArtRive } from "@/components/GiftArtRive";
 import { PixPanel } from "@/components/PixPanel";
 import { formatBRL, toIso } from "@/lib/format";
 import { findGiftBySlug, findPaymentByPublicId } from "@/lib/queries";
@@ -55,7 +55,10 @@ export default async function PixPage({
         <div className="border-b border-navy-900/8 bg-ivory px-6 py-6 text-center">
           {/* Ilustracao: sem radius proprio, e o card que recorta.
               Radius dentro de radius e o que ficava estranho. */}
-          <GiftArt name={gift.name} category={gift.category} className="mx-auto h-24 w-24" />
+          <GiftArtRive 
+            imageKey={gift.image_key} 
+            className="mx-auto h-24 w-24" 
+          />
           <p className="mt-4 text-[0.65rem] uppercase tracking-[0.24em] text-navy-800/55">
             Seu presente
           </p>

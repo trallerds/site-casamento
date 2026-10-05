@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GiftArt } from "@/components/GiftArt";
+import { GiftArtRive } from "@/components/GiftArtRive";
 import { formatBRL } from "@/lib/format";
 import type { GiftRow } from "@/lib/queries";
 
@@ -10,7 +10,7 @@ export function GiftCard({ gift }: { gift: GiftRow }) {
       className="group flex flex-col overflow-hidden rounded-card border border-navy-900/10 bg-white shadow-soft transition-all duration-500 hover:-translate-y-2 hover:shadow-lift active:scale-[0.98]"
     >
       <div className="relative overflow-hidden">
-        <GiftArt 
+        <GiftArtRive 
           imageKey={gift.image_key} 
           className="aspect-[4/3] w-full transition-transform duration-700 group-hover:scale-110" 
         />

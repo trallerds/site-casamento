@@ -10,7 +10,7 @@ interface GiftArtProps {
   interactive?: boolean;
 }
 
-export function GiftArt({ 
+export function GiftArtRive({ 
   imageKey, 
   name = "", 
   category = "", 
