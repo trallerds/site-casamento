@@ -1,37 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  --color-navy-950: #071a30;
-  --color-navy-900: #0b2545;
-  --color-navy-800: #123a63;
-  --color-navy-700: #1a4c80;
-  --color-navy-600: #2b639e;
-  --color-navy-100: #e6eef7;
-  --color-navy-50: #f3f7fb;
+  --color-navy-950: #051223;
+  --color-navy-900: #0a1f3d;
+  --color-navy-800: #15325e;
+  --color-navy-700: #1e4a80;
+  --color-navy-600: #2c65a8;
+  --color-navy-100: #eef3f9;
+  --color-navy-50: #f8fafc;
 
-  --color-gold-700: #9a7a25;
-  --color-gold-600: #b08d2a;
-  --color-gold-500: #c8a85a;
-  --color-gold-400: #d9c08a;
-  --color-gold-200: #efe3c6;
-  --color-gold-100: #f8f1e0;
+  --color-gold-700: #8a6d20;
+  --color-gold-600: #a18632;
+  --color-gold-500: #c5a85d;
+  --color-gold-400: #dcc48a;
+  --color-gold-300: #efddb3;
+  --color-gold-200: #f7efd5;
+  --color-gold-100: #fdfaf1;
 
-  --color-ivory: #fbf8f3;
-  --color-blush: #f3e7e4;
+  --color-ivory: #fdfcfb;
+  --color-blush: #f8e9e6;
+  --color-blush-deep: #eddad5;
 
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia,
     "Times New Roman", serif;
-  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     "Noto Sans", sans-serif;
 
-  --shadow-soft: 0 1px 2px rgb(11 37 69 / 0.04), 0 8px 30px rgb(11 37 69 / 0.07);
-  --shadow-lift: 0 2px 4px rgb(11 37 69 / 0.06), 0 18px 48px rgb(11 37 69 / 0.12);
+  --shadow-soft: 0 1px 2px rgba(10, 31, 61, 0.04), 0 8px 30px rgba(10, 31, 61, 0.06);
+  --shadow-lift: 0 4px 6px rgba(10, 31, 61, 0.08), 0 20px 50px rgba(10, 31, 61, 0.12);
 
-  /* Radius e decisao de componente, nao regra global: a logo
-     oficial nao e recortada, a imagem de conteudo usa media e
-     o painel usa card. Logo e icone ficam sem radius. */
-  --radius-card: 1rem;
-  --radius-media: 0.75rem;
+  --radius-card: 1.25rem;
+  --radius-media: 1rem;
 }
 
 @layer base {
@@ -44,22 +43,25 @@
     background-color: var(--color-ivory);
     color: var(--color-navy-900);
     font-family: var(--font-body);
-    font-feature-settings: "kern";
+    font-feature-settings: "kern", "cv01", "cv02", "cv03", "cv04", "cv05", "cv06", "cv07", "cv08", "cv09", "cv10", "cv11";
     -webkit-font-smoothing: antialiased;
     overflow-wrap: break-word;
     touch-action: manipulation;
+    line-height: 1.6;
   }
 
   h1,
   h2,
-  h3 {
+  h3,
+  h4 {
     font-family: var(--font-display);
     font-weight: 400;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-gold-600);
+    outline: 2px solid var(--color-gold-500);
     outline-offset: 3px;
     border-radius: 2px;
   }
@@ -71,8 +73,6 @@
 }
 
 @layer components {
-  /* Um unico container para header, main e footer: mesma largura
-     maxima e mesma margem lateral em todas as paginas. */
   .shell {
     margin-inline: auto;
     width: 100%;
@@ -82,12 +82,12 @@
 
   @media (min-width: 768px) {
     .shell {
-      padding-inline: 2rem;
+      padding-inline: 2.5rem;
     }
   }
 
   .frame-line {
-    border: 1px solid color-mix(in srgb, var(--color-gold-500) 42%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-gold-500) 30%, transparent);
   }
 
   .rule-gold {
@@ -95,13 +95,42 @@
     background: linear-gradient(
       to right,
       transparent,
-      color-mix(in srgb, var(--color-gold-500) 65%, transparent),
+      var(--color-gold-500),
       transparent
     );
   }
 
   .text-balance {
     text-wrap: balance;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+  }
+
+  .slide-up {
+    animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
