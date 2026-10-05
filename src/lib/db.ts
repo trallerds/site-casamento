@@ -22,7 +22,12 @@ export type Gift = {
   updated_at: string;
 };
 
-export type PaymentStatus = "pending" | "paid" | "expired" | "cancelled" | "failed";
+export type PaymentStatus =
+  | "pending"
+  | "paid"
+  | "expired"
+  | "cancelled"
+  | "failed";
 
 export type Payment = {
   id: number;
@@ -175,7 +180,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 5,
     display_order: 1,
     name: "Cobertor para a noiva que está sempre coberta de razão",
-    description: "Para aquecer a noiva enquanto ela explica, pela 17ª vez, por que estava certa.",
+    description:
+      "Para aquecer a noiva enquanto ela explica, pela 17ª vez, por que estava certa.",
     image_key: "default",
     amount_cents: 3000,
     category: "Sobrevivência do casamento",
@@ -185,7 +191,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 5,
     display_order: 2,
     name: "Capacete anti-cacetadas",
-    description: "Para proteger as noivas das cacetadas da vida e das decisões duvidosas do casamento.",
+    description:
+      "Para proteger as noivas das cacetadas da vida e das decisões duvidosas do casamento.",
     image_key: "default",
     amount_cents: 2500,
     category: "Sobrevivência do casamento",
@@ -195,7 +202,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 5,
     display_order: 3,
     name: "Extintor de incêndio matrimonial",
-    description: "Para apagar pequenos incêndios antes que virem uma DR de três horas.",
+    description:
+      "Para apagar pequenos incêndios antes que virem uma DR de três horas.",
     image_key: "default",
     amount_cents: 4000,
     category: "Sobrevivência do casamento",
@@ -225,7 +233,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 3,
     display_order: 6,
     name: "Memória RAM para lembrar o que a esposa falou há 6 meses",
-    description: "Porque aparentemente 'eu já te falei isso' é uma informação importantíssima.",
+    description:
+      "Porque aparentemente 'eu já te falei isso' é uma informação importantíssima.",
     image_key: "default",
     amount_cents: 6000,
     category: "Sobrevivência do casamento",
@@ -235,7 +244,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 5,
     display_order: 7,
     name: "Manual 'Como sobreviver à esposa certa'",
-    description: "Edição especial para duas noivas que eventualmente podem estar certas ao mesmo tempo.",
+    description:
+      "Edição especial para duas noivas que eventualmente podem estar certas ao mesmo tempo.",
     image_key: "default",
     amount_cents: 4500,
     category: "Sobrevivência do casamento",
@@ -265,7 +275,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 3,
     display_order: 10,
     name: "Kit Justiça do Lar",
-    description: "Para decidir quem está certa. Resultado previsto: provavelmente as duas.",
+    description:
+      "Para decidir quem está certa. Resultado previsto: provavelmente as duas.",
     image_key: "default",
     amount_cents: 7000,
     category: "Sobrevivência do casamento",
@@ -295,7 +306,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 10,
     display_order: 13,
     name: "Cota do Wi-Fi",
-    description: "Para que as noivas continuem pesquisando quem está certa durante as discussões.",
+    description:
+      "Para que as noivas continuem pesquisando quem está certa durante as discussões.",
     image_key: "default",
     amount_cents: 4000,
     category: "Boletos do amor",
@@ -305,7 +317,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 10,
     display_order: 14,
     name: "Cota do mercado",
-    description: "Para comprar tudo que estava na lista e mais 37 coisas que não estavam.",
+    description:
+      "Para comprar tudo que estava na lista e mais 37 coisas que não estavam.",
     image_key: "default",
     amount_cents: 5000,
     category: "Boletos do amor",
@@ -325,7 +338,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 10,
     display_order: 16,
     name: "Cota 'a fatura do cartão chegou'",
-    description: "Contribua para que as noivas continuem fingindo surpresa todo mês.",
+    description:
+      "Contribua para que as noivas continuem fingindo surpresa todo mês.",
     image_key: "default",
     amount_cents: 10000,
     category: "Boletos do amor",
@@ -345,7 +359,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 10,
     display_order: 18,
     name: "Cota do aluguel",
-    description: "Para manter o teto sobre nossas cabeças e as DRs dentro de casa.",
+    description:
+      "Para manter o teto sobre nossas cabeças e as DRs dentro de casa.",
     image_key: "default",
     amount_cents: 10000,
     category: "Boletos do amor",
@@ -355,7 +370,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 10,
     display_order: 19,
     name: "Cota da lavanderia",
-    description: "Porque roupa suja se lava em casa... ou se paga alguém para lavar.",
+    description:
+      "Porque roupa suja se lava em casa... ou se paga alguém para lavar.",
     image_key: "default",
     amount_cents: 5000,
     category: "Boletos do amor",
@@ -365,7 +381,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 10,
     display_order: 20,
     name: "Cota para tirar as noivas de casa",
-    description: "Depois de tanto planejamento de casamento, precisamos fugir um pouquinho.",
+    description:
+      "Depois de tanto planejamento de casamento, precisamos fugir um pouquinho.",
     image_key: "default",
     amount_cents: 10000,
     category: "Lua de mel",
@@ -395,7 +412,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 10,
     display_order: 23,
     name: "Cota 'a dieta começa amanhã'",
-    description: "Investimento em felicidade, carboidratos e decisões que serão justificadas depois.",
+    description:
+      "Investimento em felicidade, carboidratos e decisões que serão justificadas depois.",
     image_key: "default",
     amount_cents: 8000,
     category: "Lua de mel",
@@ -405,7 +423,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 10,
     display_order: 24,
     name: "Cota para fotos que ninguém pediu",
-    description: "Porque precisamos voltar da viagem com pelo menos 2.000 fotos.",
+    description:
+      "Porque precisamos voltar da viagem com pelo menos 2.000 fotos.",
     image_key: "default",
     amount_cents: 5000,
     category: "Lua de mel",
@@ -435,7 +454,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 5,
     display_order: 27,
     name: "Cota do excesso de bagagem",
-    description: "Porque aparentemente 15 looks para 5 dias são completamente necessários.",
+    description:
+      "Porque aparentemente 15 looks para 5 dias são completamente necessários.",
     image_key: "default",
     amount_cents: 10000,
     category: "Lua de mel",
@@ -485,7 +505,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 10,
     display_order: 32,
     name: "Café da manhã pós-briga",
-    description: "Porque alguém precisa fazer as pazes — de preferência com comida.",
+    description:
+      "Porque alguém precisa fazer as pazes — de preferência com comida.",
     image_key: "default",
     amount_cents: 6000,
     category: "Amor",
@@ -505,7 +526,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 20,
     display_order: 34,
     name: "Cota 'felizes para sempre'",
-    description: "Contribua para nosso final feliz — que, convenientemente, começa depois do Pix.",
+    description:
+      "Contribua para nosso final feliz — que, convenientemente, começa depois do Pix.",
     image_key: "default",
     amount_cents: 10000,
     category: "Amor",
@@ -515,7 +537,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 50,
     display_order: 35,
     name: "Cota do PIX sem explicação",
-    description: "Você não sabe o que comprar? Nós também não sabemos o que você quer dar. Mande o Pix e todos saem felizes.",
+    description:
+      "Você não sabe o que comprar? Nós também não sabemos o que você quer dar. Mande o Pix e todos saem felizes.",
     image_key: "default",
     amount_cents: 5000,
     category: "Pix livre",
@@ -525,7 +548,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 20,
     display_order: 36,
     name: "Cota 'esqueci o presente'",
-    description: "Para quem lembrou do casamento, mas não lembrou de comprar nada.",
+    description:
+      "Para quem lembrou do casamento, mas não lembrou de comprar nada.",
     image_key: "default",
     amount_cents: 2000,
     category: "Pix livre",
@@ -555,7 +579,8 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 20,
     display_order: 39,
     name: "Evite uma DR",
-    description: "Doe agora e ajude a manter duas noivas longe de uma discussão desnecessária.",
+    description:
+      "Doe agora e ajude a manter duas noivas longe de uma discussão desnecessária.",
     image_key: "default",
     amount_cents: 5000,
     category: "Pix livre",
@@ -565,22 +590,20 @@ const SEED_GIFTS: SeedGift[] = [
     total_quantity: 3,
     display_order: 40,
     name: "Patrocinador Master da nossa lua de mel",
-    description: "Um investimento de alto impacto para duas recém-casadas e suas futuras histórias.",
+    description:
+      "Um investimento de alto impacto para duas recém-casadas e suas futuras histórias.",
     image_key: "default",
     amount_cents: 100000,
     category: "Pix livre",
   },
 ];
-
 const SEED_SETTINGS: Record<string, string> = {
   wedding_names: process.env.WEDDING_NAMES || "Jéssica & Jennifer",
   wedding_date: process.env.WEDDING_DATE || "2026-10-29",
   hero_title: "Nosso dia fica ainda mais especial porque você está aqui.",
   story_title: "Nossa história",
   story_text:
-    "A gente se conheceu num dia comum, num lugar comum, e nenhuma das duas fez a primeira escolha certa. A vida deu algumas voltas antes de colocar a gente exatamente onde deveria estar: uma com a outra.\n\nEste site não é uma lista de casamento. É um cantinho do nosso dia, feito para quem esteve aqui — ou fez parte da nossa história — deixar um pedacinho seu com a gente.\n\nPode ser um presente, uma foto, uma memória. No fim, a gente só queria guardar um pouco de tudo aquilo que fez esse dia ser nosso.",
-  // Campo 59 do BR Code e o titular da chave Pix, nao o nome do casal:
-  // "&" nem acento existem no alfabeto de EMV.
+    "A nossa história começou de um jeito simples, como tantas coisas que acabam se tornando as mais importantes da nossa vida.\n\nEntre encontros, conversas, risadas e tantos momentos compartilhados, fomos construindo, aos poucos, aquilo que hoje chamamos de nós.\n\nEste site é um cantinho do nosso dia, feito para celebrar esse momento ao lado das pessoas que, de alguma forma, fazem parte da nossa história.\n\nAqui, vocês podem deixar um presente, uma foto, uma lembrança ou simplesmente um pedacinho desse dia com a gente.\n\nPorque, no fim, mais do que guardar coisas, queremos guardar memórias — e levar conosco um pouco de cada pessoa que tornou esse momento ainda mais especial.\n\nSejam muito bem-vindos ao nosso dia. É uma alegria ter vocês aqui. 🤍",
   pix_recipient_name: "JESSICA C GONCALVES",
   pix_key: process.env.PIX_KEY || "",
   pix_recipient_city: process.env.PIX_RECIPIENT_CITY || "SAO PAULO",
@@ -605,7 +628,9 @@ export function pool(): Pool {
     scope.__deixaAquiPool = new Pool({
       connectionString,
       max: Number(process.env.DATABASE_POOL_MAX) || 4,
-      ssl: /neon\.tech/.test(connectionString) ? { rejectUnauthorized: false } : undefined,
+      ssl: /neon\.tech/.test(connectionString)
+        ? { rejectUnauthorized: false }
+        : undefined,
     });
   }
   return scope.__deixaAquiPool;
@@ -664,12 +689,17 @@ export async function sql<T extends QueryResultRow = QueryResultRow>(
   return (await pool().query<T>(text, params)).rows;
 }
 
-export async function run(text: string, params: unknown[] = []): Promise<number> {
+export async function run(
+  text: string,
+  params: unknown[] = [],
+): Promise<number> {
   await ensureSchema();
   return (await pool().query(text, params)).rowCount ?? 0;
 }
 
-export async function tx<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+export async function tx<T>(
+  fn: (client: PoolClient) => Promise<T>,
+): Promise<T> {
   await ensureSchema();
   const client = await pool().connect();
   try {
