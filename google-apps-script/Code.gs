@@ -25,6 +25,13 @@ function prop_(name) {
   return PropertiesService.getScriptProperties().getProperty(name);
 }
 
+function authorizeRsvp() {
+  var documentId = prop_("RSVP_DOC_ID");
+  if (!documentId) throw new Error("Configure RSVP_DOC_ID antes de autorizar o Google Docs.");
+  var document = DocumentApp.openById(documentId);
+  Logger.log("Acesso autorizado ao documento de RSVP: " + document.getName());
+}
+
 function json_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(
     ContentService.MimeType.JSON

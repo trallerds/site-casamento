@@ -43,7 +43,7 @@ export default async function AdminSettingsPage({
             defaultValue={settings.wedding_date}
             type="date"
           />
-          <TextField label="Horário" name="wedding_time" defaultValue={settings.wedding_time ?? "19:00"} type="time" />
+          <TextField label="Horário" name="wedding_time" defaultValue={settings.wedding_time ?? "19:30"} type="time" />
           <TextField label="Local" name="wedding_venue" defaultValue={settings.wedding_venue} />
           <TextField label="Endereço" name="wedding_address" defaultValue={settings.wedding_address} />
           <TextField label="Link do Google Maps" name="wedding_maps_url" defaultValue={settings.wedding_maps_url ?? "https://share.google/D9bzAuECKilvEbU6t"} type="url" />

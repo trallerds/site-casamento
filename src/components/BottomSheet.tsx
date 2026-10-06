@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 interface BottomSheetProps {
@@ -13,48 +13,50 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ isOpen, onClose, title, icon, children, actions }: BottomSheetProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
   useEffect(() => {
-    if (!isOpen) return;
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleEscape);
-    document.body.style.overflow = "hidden";
+    const dialog = dialogRef.current;
+    if (!isOpen || !dialog) return;
+
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialog.showModal();
     return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "";
+      if (dialog.open) dialog.close();
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-navy-950/60 backdrop-blur-sm p-4 md:p-0" onClick={onClose}>
-      <div
-        className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-xl shadow-2xl transform transition-all duration-300 sm:mx-auto animate-slide-up"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="bottomsheet-title"
-      >
-        <div className="flex items-center justify-between p-4 border-b border-navy-900/10">
-          <div className="flex items-center gap-3">
-            {icon && <div className="p-2 rounded-full bg-gold-100 text-gold-700">{icon}</div>}
-            <h2 id="bottomsheet-title" className="font-display text-xl text-navy-900">{title}</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full text-navy-800/50 hover:bg-navy-900/10 transition-colors"
-            aria-label="Fechar"
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 6 12 12M18 6 6 18" /></svg>
-          </button>
+    <dialog
+      ref={dialogRef}
+      className="dialog-sheet"
+      aria-modal="true"
+      aria-labelledby="bottomsheet-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="dialog-sheet__handle" aria-hidden="true" />
+      <header className="dialog-sheet__header">
+        <div className="flex min-w-0 items-center gap-3">
+          {icon ? <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold-100 text-gold-700">{icon}</span> : null}
+          <h2 id="bottomsheet-title" className="min-w-0 font-display text-xl text-navy-900 text-balance">{title}</h2>
         </div>
-        <div className="p-6">{children}</div>
-        {actions && <div className="px-4 pb-4">{actions}</div>}
-      </div>
-    </div>,
-    document.body
+        <button type="button" onClick={onClose} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-navy-800/60 hover:bg-navy-900/5" aria-label="Fechar janela">
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+      </header>
+      <div className="dialog-sheet__content">{children}</div>
+      {actions ? <footer className="dialog-sheet__footer">{actions}</footer> : null}
+    </dialog>,
+    document.body,
   );
 }
 

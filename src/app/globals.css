@@ -100,6 +100,90 @@
     );
   }
 
+  .dialog-sheet {
+    position: fixed;
+    inset: auto 0 0;
+    display: flex;
+    width: 100%;
+    max-width: 32rem;
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 1rem);
+    flex-direction: column;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    padding: 0;
+    background: white;
+    color: var(--color-navy-900);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .dialog-sheet::backdrop {
+    background: color-mix(in srgb, var(--color-navy-950) 62%, transparent);
+    backdrop-filter: blur(0.25rem);
+  }
+
+  .dialog-sheet__handle {
+    flex: none;
+    width: 2.5rem;
+    height: 0.25rem;
+    margin: max(0.75rem, env(safe-area-inset-top, 0px)) auto 0.25rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-navy-900) 18%, transparent);
+  }
+
+  .dialog-sheet__header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-navy-900) 10%, transparent);
+    padding: 0.75rem max(1.25rem, env(safe-area-inset-right, 0px)) 1rem max(1.25rem, env(safe-area-inset-left, 0px));
+  }
+
+  .dialog-sheet__content {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 1.25rem max(1.25rem, env(safe-area-inset-right, 0px)) max(1.25rem, env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px));
+  }
+
+  .dialog-sheet__footer {
+    flex: none;
+    border-top: 1px solid color-mix(in srgb, var(--color-navy-900) 10%, transparent);
+    padding: 0.75rem max(1rem, env(safe-area-inset-right, 0px)) max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+    background: var(--color-ivory);
+  }
+
+  @media (min-width: 640px) {
+    .dialog-sheet {
+      inset: 0;
+      width: calc(100vw - 2rem);
+      max-height: min(85dvh, 48rem);
+      margin: auto;
+      border-radius: var(--radius-card);
+    }
+
+    .dialog-sheet__handle {
+      display: none;
+    }
+
+    .dialog-sheet__header {
+      padding: 1.25rem 2rem;
+    }
+
+    .dialog-sheet__content {
+      padding: 1.5rem 2rem;
+    }
+
+    .dialog-sheet__footer {
+      padding: 1rem 2rem;
+    }
+  }
+
   .text-balance {
     text-wrap: balance;
   }

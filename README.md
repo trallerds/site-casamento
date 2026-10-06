@@ -88,10 +88,10 @@ noivas. Quem envia a foto é o backend, nunca o convidado.
 
 Para registrar confirmações de presença no mesmo Apps Script, crie um Google Doc para o RSVP e
 adicione `RSVP_DOC_ID` em **Project Settings → Script Properties**. A conta proprietária do script
-precisa ter permissão de edição no documento. Depois de atualizar `Code.gs`, publique uma nova versão
-do Web App; a API `/api/rsvp` usa `GOOGLE_APPS_SCRIPT_URL` e `GOOGLE_APPS_SCRIPT_SECRET` no servidor,
-aplica limite por IP e aceita até cinco acompanhantes. Os nomes são enviados ao documento e não são
-salvos no banco do site.
+precisa ter permissão de edição no documento. No editor, execute `authorizeRsvp` uma vez e aprove o
+acesso ao Google Docs; depois, publique uma nova versão do Web App. A API `/api/rsvp` usa
+`GOOGLE_APPS_SCRIPT_URL` e `GOOGLE_APPS_SCRIPT_SECRET` no servidor, aplica limite por IP e aceita até
+cinco acompanhantes. Os nomes são enviados ao documento e não são salvos no banco do site.
 
 *Who has access* precisa ser **Anyone**: o `fetch` do Vercel não tem sessão Google, então "Anyone
 with Google account" rejeitaria o backend. Por isso o `GOOGLE_APPS_SCRIPT_SECRET` é obrigatório —

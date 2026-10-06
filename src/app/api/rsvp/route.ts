@@ -21,7 +21,12 @@ export async function POST(request: Request) {
   }
 
   const submission = normalizeRsvpSubmission(body);
-  if (!submission) return Response.json({ error: "Confira os nomes informados." }, { status: 400 });
+  if (!submission) {
+    return Response.json(
+      { error: "Informe seu nome e sobrenome e use até cinco acompanhantes." },
+      { status: 400 },
+    );
+  }
 
   const endpoint = process.env.GOOGLE_APPS_SCRIPT_URL;
   const secret = process.env.GOOGLE_APPS_SCRIPT_SECRET;
@@ -37,8 +42,14 @@ export async function POST(request: Request) {
       signal: AbortSignal.timeout(20_000),
       cache: "no-store",
     });
-    const result = await response.json() as { ok?: boolean };
-    if (!response.ok || result.ok !== true) throw new Error("Apps Script rejected RSVP");
+    const result = await response.json() as { ok?: boolean; message?: unknown };
+    if (!response.ok || result.ok !== true) {
+      console.error("[RSVP] Apps Script rejected confirmation", {
+        status: response.status,
+        reason: typeof result.message === "string" ? result.message.slice(0, 200) : "No reason returned",
+      });
+      return Response.json({ error: "Não foi possível registrar a confirmação." }, { status: 502 });
+    }
     return Response.json({ ok: true }, { status: 201 });
   } catch (error) {
     console.error("[RSVP] Submission failed", error);

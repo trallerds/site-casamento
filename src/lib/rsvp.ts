@@ -11,6 +11,6 @@ export function normalizeRsvpSubmission(body: unknown) {
   const name = cleanName(payload.name);
   const rawCompanions = Array.isArray(payload.companions) ? payload.companions : [];
   const companions = rawCompanions.map(cleanName).filter(Boolean);
-  if (!name || rawCompanions.length > 5 || companions.length > 5) return null;
+  if (name.split(" ").length < 2 || rawCompanions.length > 5 || companions.length > 5) return null;
   return { name, companions };
 }

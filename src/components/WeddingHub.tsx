@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { QuickAction } from "@/components/QuickAction";
+import { BottomSheet } from "@/components/BottomSheet";
 
 type HubAction = "invite" | "date" | "venue" | "rsvp" | "dress";
 
@@ -32,8 +33,8 @@ export function WeddingHub({
   const [name, setName] = useState("");
   const [companions, setCompanions] = useState("");
   const [rsvpState, setRsvpState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [rsvpError, setRsvpError] = useState("");
   const [addressCopied, setAddressCopied] = useState(false);
-  const dialogRef = useRef<HTMLElement>(null);
   const isSafeMapsUrl = (value: string) => {
     try {
       const parsed = new URL(value);
@@ -74,37 +75,6 @@ export function WeddingHub({
       })}`
     : "";
 
-  useEffect(() => {
-    if (!active) return;
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    dialogRef.current?.focus({ preventScroll: true });
-    const handleDialogKeys = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActive(null);
-      if (event.key !== "Tab") return;
-      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not(:disabled), input:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
-      );
-      if (!focusable?.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", handleDialogKeys);
-    return () => {
-      document.removeEventListener("keydown", handleDialogKeys);
-      document.body.style.overflow = previousOverflow;
-      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
-    };
-  }, [active]);
-
   async function submitRsvp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setRsvpState("sending");
@@ -114,9 +84,16 @@ export function WeddingHub({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, companions: companions.split("\n") }),
       });
+      const result = await response.json() as { error?: string };
+      if (response.status === 400) {
+        setRsvpError(result.error ?? "Confira seu nome e tente novamente.");
+        setRsvpState("error");
+        return;
+      }
       if (!response.ok) throw new Error("request failed");
       setRsvpState("sent");
     } catch {
+      setRsvpError("Não foi possível confirmar agora. Tente novamente, por favor.");
       setRsvpState("error");
     }
   }
@@ -161,7 +138,7 @@ export function WeddingHub({
             description={card.detail}
             variant={card.id === "rsvp" ? "primary" : "default"}
             className="min-h-36 w-full text-left sm:min-h-40"
-            action={() => { setActive(card.id); setRsvpState("idle"); }}
+            action={() => { setActive(card.id); setRsvpState("idle"); setRsvpError(""); }}
           />;
         })}
       </div>
@@ -179,21 +156,22 @@ export function WeddingHub({
         </button>
       </div>
 
-      {active ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-navy-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setActive(null); }}>
-          <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="hub-dialog-title" tabIndex={-1} className="max-h-[90dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl bg-white p-6 shadow-2xl sm:rounded-card sm:p-8">
-            <div className="flex items-start justify-between gap-4">
-              <h2 id="hub-dialog-title" className="font-display text-2xl text-navy-900">
-                {active === "invite" ? "O convite" : active === "date" ? "Data e hora" : active === "venue" ? "Local e como chegar" : active === "rsvp" ? "Confirmar presença" : "O que vestir"}
-              </h2>
-              <button type="button" onClick={() => setActive(null)} aria-label="Fechar" className="-mr-2 -mt-2 flex h-11 w-11 items-center justify-center rounded-full text-xl text-navy-800/60 hover:bg-navy-900/5">×</button>
-            </div>
+      <BottomSheet
+        isOpen={Boolean(active)}
+        onClose={() => setActive(null)}
+        title={active === "invite" ? "O convite" : active === "date" ? "Data e hora" : active === "venue" ? "Local e como chegar" : active === "rsvp" ? "Confirmar presença" : "O que vestir"}
+        actions={active === "rsvp" && rsvpState !== "sent" ? (
+          <button form="rsvp-form" type="submit" disabled={rsvpState === "sending"} className="min-h-12 w-full rounded-full bg-navy-900 px-6 py-4 text-sm uppercase tracking-wider text-ivory disabled:opacity-60">
+            {rsvpState === "sending" ? "Enviando…" : "Confirmar presença"}
+          </button>
+        ) : null}
+      >
 
             {active === "invite" ? (
               safeInvitationUrl ? (
                 <div className="mt-5">
                   {invitationPreviewUrl ? (
-                    <div className="h-[58dvh] min-h-72 overflow-hidden rounded-lg border border-navy-900/10 bg-navy-50">
+                    <div className="h-[52dvh] min-h-64 overflow-hidden rounded-lg border border-navy-900/10 bg-navy-50 sm:h-[60dvh]">
                       <iframe
                         src={invitationPreviewUrl}
                         title="Convite de Jéssica & Jennifer"
@@ -241,18 +219,15 @@ export function WeddingHub({
 
             {active === "rsvp" ? (
               rsvpState === "sent" ? <p role="status" className="mt-6 text-center font-display text-2xl text-navy-900">Presença confirmada! 💙</p> : (
-                <form className="mt-5 space-y-4" onSubmit={submitRsvp}>
+                <form id="rsvp-form" className="space-y-4" onSubmit={submitRsvp}>
                   <p className="text-sm leading-relaxed text-navy-800/70">Informe seu nome e, se for o caso, cada acompanhante em uma linha.</p>
-                  <label className="block text-xs uppercase tracking-wider text-navy-800/70">Nome completo<input className="mt-2 min-h-12 w-full rounded-lg border border-navy-900/15 px-3 text-base normal-case tracking-normal text-navy-900" required maxLength={100} value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" /></label>
-                  <label className="block text-xs uppercase tracking-wider text-navy-800/70">Acompanhantes (opcional)<textarea className="mt-2 w-full rounded-lg border border-navy-900/15 px-3 py-3 text-base normal-case tracking-normal text-navy-900" rows={3} maxLength={500} value={companions} onChange={(event) => setCompanions(event.target.value)} /></label>
-                  {rsvpState === "error" ? <p role="alert" className="text-sm text-gold-700">Não foi possível confirmar agora. Tente novamente, por favor.</p> : null}
-                  <button disabled={rsvpState === "sending"} className="min-h-12 w-full rounded-full bg-navy-900 px-6 py-4 text-sm uppercase tracking-wider text-ivory disabled:opacity-60">{rsvpState === "sending" ? "Enviando…" : "Confirmar presença"}</button>
+                  <label className="block text-sm uppercase tracking-wide text-navy-800/70">Nome completo<input name="name" className="mt-2 min-h-12 w-full rounded-lg border border-navy-900/15 px-3 text-base normal-case tracking-normal text-navy-900" required maxLength={100} value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" /></label>
+                  <label className="block text-sm uppercase tracking-wide text-navy-800/70">Acompanhantes (opcional)<textarea name="companions" className="mt-2 w-full rounded-lg border border-navy-900/15 px-3 py-3 text-base normal-case tracking-normal text-navy-900" rows={3} maxLength={500} value={companions} onChange={(event) => setCompanions(event.target.value)} /></label>
+                  {rsvpState === "error" ? <p role="alert" className="text-sm text-gold-700">{rsvpError}</p> : null}
                 </form>
               )
             ) : null}
-          </section>
-        </div>
-      ) : null}
+      </BottomSheet>
     </section>
   );
 }
