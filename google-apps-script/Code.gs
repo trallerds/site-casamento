@@ -11,7 +11,8 @@
  *        Who has access: Anyone      <- obrigatorio (o fetch do Vercel e anonimo)
  *   4. A URL /exec vai no Vercel como GOOGLE_APPS_SCRIPT_URL
  *
- * Superficie: save, read, health. Nada de create, move, trash ou escolha de pasta.
+ * Superficie: save, read, health e appendRsvp (Google Doc por Script Property).
+ * Nada de create, move, trash ou escolha de pasta para os arquivos.
  * Tudo que entra precisa do segredo compartilhado, e toda leitura e escrita e
  * presa a FOLDER_ID -- nenhum campo do request escolhe o destino.
  */
@@ -84,6 +85,33 @@ function doPost(e) {
     if (body.action === "health") {
       var folder = folder_();
       return json_({ ok: true, count: folder.getFiles().length, folder: folder.getName() });
+    }
+
+    if (body.action === "appendRsvp") {
+      var documentId = prop_("RSVP_DOC_ID");
+      if (!documentId) throw new Error("RSVP_DOC_ID nao configurado");
+      var guestName = String(body.name || "").replace(/[\u0000-\u001f\u007f]/g, " ").trim();
+      var guests = Array.isArray(body.companions) ? body.companions : [];
+      if (!guestName || guestName.length > 100 || guests.length > 5) throw new Error("confirmacao invalida");
+      var lock = LockService.getScriptLock();
+      lock.waitLock(10000);
+      try {
+        var document = DocumentApp.openById(documentId);
+        var documentBody = document.getBody();
+        documentBody.appendParagraph("CONFIRMAÇÃO DE PRESENÇA").setHeading(DocumentApp.ParagraphHeading.HEADING2);
+        documentBody.appendParagraph(String(body.couple || "Jéssica & Jennifer"));
+        documentBody.appendParagraph(Utilities.formatDate(new Date(), "America/Sao_Paulo", "dd/MM/yyyy · HH:mm"));
+        documentBody.appendParagraph(guestName);
+        guests.forEach(function(name) {
+          var companion = String(name || "").replace(/[\u0000-\u001f\u007f]/g, " ").trim();
+          if (companion && companion.length <= 100) documentBody.appendParagraph(companion);
+        });
+        documentBody.appendParagraph("");
+        document.saveAndClose();
+      } finally {
+        lock.releaseLock();
+      }
+      return json_({ ok: true });
     }
 
     if (body.action === "save") {

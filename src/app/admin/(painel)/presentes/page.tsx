@@ -35,7 +35,7 @@ export default async function AdminGiftsPage({
                 <th className="px-4 py-3 font-medium">Presente</th>
                 <th className="px-4 py-3 font-medium">Valor</th>
                 <th className="px-4 py-3 font-medium">Recebido</th>
-                <th className="px-4 py-3 font-medium">Disponíveis</th>
+                <th className="px-4 py-3 font-medium">Contribuições</th>
                 <th className="px-4 py-3 font-medium">Ações</th>
               </tr>
             </thead>
@@ -53,10 +53,7 @@ export default async function AdminGiftsPage({
                     <td className="px-4 py-3 text-navy-800/75">{formatBRL(gift.amount_cents)}</td>
                     <td className="px-4 py-3 text-navy-800/75">{formatBRL(total?.paid_cents ?? 0)}</td>
                     <td className="px-4 py-3 text-navy-800/75">
-                      {gift.total_quantity - gift.sold_quantity}/{gift.total_quantity}
-                      {gift.total_quantity - gift.sold_quantity <= 0 ? (
-                        <p className="text-[0.65rem] uppercase tracking-wider text-gold-700">Adquirido</p>
-                      ) : null}
+                      {totalById.get(gift.id)?.contributions ?? 0}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -105,17 +102,6 @@ export default async function AdminGiftsPage({
           </label>
 
           <Field label="Ordem" name="display_order" defaultValue={String(editing?.display_order ?? 0)} />
-          <Field
-            label="Total de cotas"
-            name="total_quantity"
-            defaultValue={String(editing?.total_quantity ?? 1)}
-          />
-          {editing ? (
-            <p className="text-xs leading-relaxed text-navy-800/55">
-              {editing.sold_quantity} cota(s) já vendidas. O presente some da lista pública quando
-              todas as cotas acabam.
-            </p>
-          ) : null}
 
           <label className="flex items-center gap-2 text-sm text-navy-800/80">
             <input

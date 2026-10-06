@@ -51,21 +51,21 @@ export function sniffImageMime(buffer: Buffer): string | null {
 
 export async function readAndValidatePhoto(file: File) {
   if (!file || file.size === 0) {
-    throw new PhotoValidationError("Selecione uma foto para enviar.");
+    throw new PhotoValidationError("Escolha uma foto antes de enviar.");
   }
   if (file.size > maxPhotoBytes()) {
     throw new PhotoValidationError(
-      `Essa foto passa de ${Math.round(maxPhotoBytes() / (1024 * 1024))} MB. Escolha uma menor.`,
+      `Esta foto ultrapassa o limite de ${Math.round(maxPhotoBytes() / (1024 * 1024))} MB. Escolha uma imagem menor.`,
       413,
     );
   }
   const buffer = Buffer.from(await file.arrayBuffer());
   const detected = sniffImageMime(buffer);
   if (!detected || !ALLOWED_MIME.has(detected)) {
-    throw new PhotoValidationError("Esse arquivo não é uma foto válida (JPG, PNG, WebP ou HEIC).");
+    throw new PhotoValidationError("Não conseguimos abrir essa imagem. Escolha JPG, PNG, WebP ou HEIC.");
   }
   if (file.type && !ALLOWED_MIME.has(file.type)) {
-    throw new PhotoValidationError("Esse tipo de arquivo não é aceito.");
+    throw new PhotoValidationError("Este formato não é aceito. Escolha JPG, PNG, WebP ou HEIC.");
   }
   return { buffer, mimeType: detected };
 }
@@ -145,9 +145,13 @@ export async function pushToStorage(
         `UPDATE photo_uploads SET staging_key = $1, status = 'uploading', error = NULL WHERE id = $2`,
         [stagingKey, photo.id],
       );
-    } catch {
+    } catch (error) {
       stagingKey = null;
-      await run(`UPDATE photo_uploads SET status = 'uploading' WHERE id = $1`, [photo.id]);
+      await run(
+        `UPDATE photo_uploads SET status = 'failed', error = $1 WHERE id = $2`,
+        [`Não foi possível guardar uma cópia temporária: ${(error as Error).message}`.slice(0, 300), photo.id],
+      );
+      return { uploaded: false, recoverable: false };
     }
   } else {
     await run(`UPDATE photo_uploads SET status = 'uploading' WHERE id = $1`, [photo.id]);
@@ -163,19 +167,19 @@ export async function pushToStorage(
     await run(
       `UPDATE photo_uploads
        SET status = 'uploaded', storage_key = $1, external_id = $2, staging_key = NULL,
-           uploaded_at = now(), error = NULL
-       WHERE id = $3`,
-      [stored.key, stored.externalId, photo.id],
+           storage_provider = $3, uploaded_at = now(), error = NULL
+        WHERE id = $4`,
+      [stored.key, stored.externalId, storage.name, photo.id],
     );
     await dropStaged(stagingKey);
-    return true;
+    return { uploaded: true, recoverable: false };
   } catch (error) {
     const message = (error as Error).message.slice(0, 300);
     await run(
       `UPDATE photo_uploads SET status = 'failed', staging_key = $1, error = $2 WHERE id = $3`,
       [stagingKey, message, photo.id],
     );
-    return false;
+    return { uploaded: false, recoverable: Boolean(stagingKey) };
   }
 }
 
@@ -186,6 +190,9 @@ export async function retryFailedPhoto(publicId: string, storage?: PhotoStorage)
   if (!photo || !photo.staging_key) return { ok: false, message: "Sem cópia local para reprocessar." };
   const buffer = await readStaged(photo.staging_key);
   if (!buffer) return { ok: false, message: "Cópia temporária não encontrada." };
-  const ok = await pushToStorage(photo, buffer, storage);
-  return { ok, message: ok ? "Foto enviada." : "Ainda não deu certo." };
+  const result = await pushToStorage(photo, buffer, storage);
+  return {
+    ok: result.uploaded,
+    message: result.uploaded ? "Foto guardada no Drive." : "Não foi possível enviar a foto ao Drive.",
+  };
 }

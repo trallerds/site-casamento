@@ -86,6 +86,13 @@ nunca precisa de acesso à pasta.
 O Web App executa como a conta dona do script, então a autorização do Drive fica na conta das
 noivas. Quem envia a foto é o backend, nunca o convidado.
 
+Para registrar confirmações de presença no mesmo Apps Script, crie um Google Doc para o RSVP e
+adicione `RSVP_DOC_ID` em **Project Settings → Script Properties**. A conta proprietária do script
+precisa ter permissão de edição no documento. Depois de atualizar `Code.gs`, publique uma nova versão
+do Web App; a API `/api/rsvp` usa `GOOGLE_APPS_SCRIPT_URL` e `GOOGLE_APPS_SCRIPT_SECRET` no servidor,
+aplica limite por IP e aceita até cinco acompanhantes. Os nomes são enviados ao documento e não são
+salvos no banco do site.
+
 *Who has access* precisa ser **Anyone**: o `fetch` do Vercel não tem sessão Google, então "Anyone
 with Google account" rejeitaria o backend. Por isso o `GOOGLE_APPS_SCRIPT_SECRET` é obrigatório —
 é ele que impede qualquer pessoa que descubra a URL `/exec` de escrever no Drive. Para girar o
@@ -115,20 +122,21 @@ filesystem da função é somente leitura e descartado a cada deploy, então nad
 O que ainda exige atenção no ambiente serverless:
 
 - `DATABASE_URL` (string de conexão do Neon) é obrigatório nas variáveis da Vercel;
-- `PHOTO_STORAGE=drive` e as credenciais do Drive: **não há disco**, então as fotos obrigatoriamente
-  precisam ir para o Google Drive;
+- As fotos são sempre enviadas ao Google Drive; configure as credenciais do Drive. Se o envio falhar,
+  a foto permanece no aparelho para uma nova tentativa. Quando o ambiente permite, também mantemos
+  uma cópia temporária para as noivas tentarem o envio pelo painel;
 - `PIX_PROVIDER=openpix` + `OPENPIX_WEBHOOK_TOKEN` se quiser confirmação automática;
 - `NEXT_PUBLIC_SITE_URL` com o domínio real (usado nas URLs de confirmação);
 - **HTTPS é obrigatório**: a câmera do navegador não funciona em contexto inseguro.
 
-Se um dia a hospedagem voltar a ter disco persistente (Render, Railway, Fly.io, VPS), o código atual
-sobe sem mudança nenhuma.
+Mesmo em hospedagens com disco persistente, o destino final das fotos continua sendo o Google Drive.
 
 ### Em qualquer hospedagem
 
 - `ADMIN_PASSWORD_HASH` obrigatório;
-- `PHOTO_STORAGE=drive` e as credenciais do Drive: em hospedagem serverless **não há disco**, então
-  as fotos obrigatoriamente precisam ir para o Google Drive;
+- As fotos são sempre enviadas ao Google Drive; configure as credenciais do Drive. Se o envio falhar,
+  a foto permanece no aparelho para uma nova tentativa. Quando o ambiente permite, também mantemos
+  uma cópia temporária para as noivas tentarem o envio pelo painel;
 - `PIX_PROVIDER=openpix` + `OPENPIX_WEBHOOK_TOKEN` se quiser confirmação automática;
 - `NEXT_PUBLIC_SITE_URL` com o domínio real (usado nas URLs de confirmação);
 - **HTTPS é obrigatório**: a câmera do navegador não funciona em contexto inseguro.

@@ -31,14 +31,14 @@ export default async function ConfirmationPage({
       <div className="mx-auto max-w-md py-20 text-center">
         <h1 className="font-display text-2xl text-navy-900">Quase lá</h1>
         <p className="mt-3 text-sm leading-relaxed text-navy-800/75">
-          Quando o pagamento for confirmado, o presente aparece aqui para as noivas. Pode fechar esta
-          tela: nós avisamos.
+          Ainda estamos aguardando a confirmação. A tela do Pix será atualizada quando o pagamento
+          for reconhecido.
         </p>
         <Link
           href={`/presentes/${slug}/pix?p=${payment.public_id}`}
           className="mt-7 inline-block rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory"
         >
-          Ver o Pix
+          Acompanhar Pix
         </Link>
       </div>
     );
@@ -48,7 +48,7 @@ export default async function ConfirmationPage({
     <div className="mx-auto max-w-md py-16 text-center">
       <p className="text-sm uppercase tracking-[0.2em] text-gold-700">Presente recebido</p>
       <h1 className="mt-4 font-display text-3xl leading-tight text-navy-900 text-balance">
-        {gift.name} acaba de ganhar um patrocinador
+        Seu presente já chegou até nós!
       </h1>
       <Flourish className="mx-auto mt-6 h-5 w-40 text-gold-500/80" />
       <p className="mt-6 text-[0.98rem] leading-relaxed text-navy-800/80">
@@ -61,7 +61,7 @@ export default async function ConfirmationPage({
           href="/presentes"
           className="rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory"
         >
-          Presentear outro item
+          Escolher outro presente
         </Link>
         <Link
           href="/fotos"

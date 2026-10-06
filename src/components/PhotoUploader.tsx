@@ -63,7 +63,7 @@ export function PhotoUploader() {
     } catch {
       stopCamera();
       setCameraHint(
-        "Não conseguimos acessar sua câmera. Você pode escolher uma foto que já está no celular.",
+        "Não foi possível abrir a câmera. Você ainda pode escolher uma foto do celular.",
       );
       setStep("choose");
     }
@@ -93,7 +93,7 @@ export function PhotoUploader() {
       });
     } catch (err) {
       console.error("Failed to switch camera", err);
-      setError("Erro ao trocar de câmera.");
+      setError("Não foi possível trocar a câmera. Tente novamente ou escolha uma foto do celular.");
     }
   }
 
@@ -188,12 +188,12 @@ export function PhotoUploader() {
     });
     request.addEventListener("error", () => {
       sending.current = false;
-      setError("A conexão caiu. Sua foto continua aqui: tente enviar de novo.");
+      setError("A conexão foi interrompida. Sua foto continua no aparelho; tente enviar novamente.");
       setStep("preview");
     });
     request.addEventListener("abort", () => {
       sending.current = false;
-      setError("Envio interrompido. Tente de novo.");
+      setError("O envio foi interrompido. Sua foto continua no aparelho; você pode tentar novamente.");
       setStep("preview");
     });
     request.send(form);
@@ -250,6 +250,7 @@ export function PhotoUploader() {
               onClick={toggleCamera}
               className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-ivory backdrop-blur-md transition hover:bg-black/60 active:scale-90"
               title="Trocar câmera"
+              aria-label="Trocar câmera"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 12a9 9 0 0 0-9-9 9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9Z"/>
@@ -259,6 +260,7 @@ export function PhotoUploader() {
               </svg>
             </button>
           </div>
+          {error ? <p role="alert" className="mt-3 rounded-lg bg-gold-100/70 p-3 text-center text-xs leading-relaxed text-navy-900">{error}</p> : null}
           <div className="mt-4 flex items-center gap-3">
             <button
               type="button"
@@ -306,7 +308,7 @@ export function PhotoUploader() {
                 onClick={reset}
                 className="flex-1 rounded-full border border-navy-900/20 px-5 py-4 text-xs uppercase tracking-[0.18em] text-navy-800/70 transition hover:bg-navy-900/5"
               >
-                Refazer
+                Escolher outra foto
               </button>
               <button
                 type="button"
@@ -331,12 +333,12 @@ export function PhotoUploader() {
             {queued ? "Foto recebida" : "Foto enviada"}
           </p>
           <h2 className="mt-3 font-display text-2xl text-navy-900">
-            {queued ? "Guardaremos em instantes" : "Agora ela é nossa memória"}
+             {queued ? "Sua foto chegou" : "Essa já é nossa. 💙"}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-navy-800/75">
             {queued
-              ? "Recebemos sua foto, mas o armazenamento oscilou agora. Ela está segura com a gente e será guardada no Drive automaticamente — não precisa enviar de novo."
-              : "Obrigada. Ela foi direto para o nosso Drive, sem passar por rede social."}
+              ? "Ainda não conseguimos guardar sua foto no Drive. Ela ficou salva temporariamente, e as noivas poderão tentar o envio novamente. Não precisa reenviar."
+              : "Obrigada por compartilhar essa lembrança com a gente."}
           </p>
           <button
             type="button"
@@ -349,8 +351,8 @@ export function PhotoUploader() {
       ) : null}
 
       <p className="mt-6 text-center text-xs leading-relaxed text-navy-800/55">
-        Ao enviar, você permite que a foto seja guardada pelas noivas como parte das memórias do
-        casamento. Não coletamos seu nome nem seus dados.
+        Sua foto fica guardada pelas noivas como parte das memórias do casamento. Não é preciso
+        informar seu nome nem criar uma conta.
       </p>
     </div>
   );

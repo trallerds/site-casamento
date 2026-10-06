@@ -17,13 +17,13 @@ export function StartGiftButton({ giftId, slug }: { giftId: number; slug: string
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ giftId }),
       });
-      const body = (await response.json()) as { publicId?: string; error?: string };
+      const body = (await response.json()) as { publicId?: string };
       if (!response.ok || !body.publicId) {
-        throw new Error(body.error ?? "Não conseguimos gerar o Pix agora.");
+        throw new Error("Pix preparation failed");
       }
       router.push(`/presentes/${slug}/pix?p=${body.publicId}`);
-    } catch (error) {
-      setMessage((error as Error).message);
+    } catch {
+      setMessage("Não conseguimos preparar o Pix agora. Tente novamente em instantes.");
       setState("error");
     }
   }

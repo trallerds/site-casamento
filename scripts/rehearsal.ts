@@ -7,8 +7,8 @@
  *   set -a && . ./.env.local && set +a && node --import tsx scripts/rehearsal.ts
  *
  * Cobre: jornada do convidado, rajada de fotos (limite de
- * taxa), rajada de Pix, conexao ruim. Cotas e idempotencia
- * ja sao cobertas por wedding-rules.test.ts.
+ * taxa), rajada de Pix e conexao ruim. Idempotencia e conciliação
+ * sao cobertas por wedding-rules.test.ts.
  */
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -28,12 +28,12 @@ function check(label: string, condition: boolean, detail = "") {
   }
 }
 
-async function createTestGift(total: number) {
+async function createTestGift() {
   const [row] = await sql<{ id: number }>(
-    `INSERT INTO gifts (slug, name, amount_cents, total_quantity, active, category)
-     VALUES ($1, 'Ensaio do casamento (teste)', 50000, $2, 1, 'Pix livre')
+    `INSERT INTO gifts (slug, name, amount_cents, active, category)
+     VALUES ($1, 'Ensaio do casamento (teste)', 50000, 1, 'Pix livre')
      RETURNING id`,
-    [`test-rehearsal-${Date.now()}`, total],
+    [`test-rehearsal-${Date.now()}`],
   );
   return row.id;
 }
@@ -56,7 +56,7 @@ async function main() {
   const jpeg = await fs.readFile("public/logo.jpg");
 
   console.log("1/4 jornada do convidado");
-  const giftId = await createTestGift(50);
+  const giftId = await createTestGift();
   const created = await postPayment(giftId);
   const createdBody = (await created.json()) as { publicId?: string };
   check("criacao retorna 201", created.status === 201, `status ${created.status}`);
@@ -153,16 +153,6 @@ async function main() {
     created201.length === 40 && rejected429.length === 5,
     `201=${created201.length} 429=${rejected429.length}`,
   );
-  const [giftAfter] = await sql<{ available: number }>(
-    `SELECT total_quantity - sold_quantity AS available FROM gifts WHERE id = $1`,
-    [giftId],
-  );
-  check(
-    "criacao nao consome cota (baixa e na confirmacao)",
-    Number(giftAfter.available) === 50,
-    `available=${giftAfter.available}`,
-  );
-
   console.log("4/4 conexao ruim (request abortado no meio)");
   const [beforeRow] = await sql<{ n: number }>(
     `SELECT count(*)::int AS n FROM payments WHERE gift_id = $1`,

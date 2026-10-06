@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   const declared = Number(request.headers.get("content-length") ?? 0);
   if (Number.isFinite(declared) && declared > maxPhotoBytes() + 1024 * 1024) {
     return Response.json(
-      { error: "Essa foto passa do tamanho máximo. Escolha uma menor." },
+      { error: "Esta foto ultrapassa o limite. Escolha uma imagem menor." },
       { status: 413 },
     );
   }
@@ -35,12 +35,12 @@ export async function POST(request: Request) {
   try {
     form = await request.formData();
   } catch {
-    return Response.json({ error: "Não conseguimos ler o arquivo enviado." }, { status: 400 });
+    return Response.json({ error: "Não conseguimos abrir esse arquivo. Escolha a foto novamente." }, { status: 400 });
   }
 
   const file = form.get("photo");
   if (!(file instanceof File)) {
-    return Response.json({ error: "Selecione uma foto para enviar." }, { status: 400 });
+    return Response.json({ error: "Escolha uma foto antes de enviar." }, { status: 400 });
   }
 
   let validated: { buffer: Buffer; mimeType: string };
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     if (error instanceof PhotoValidationError) {
       return Response.json({ error: error.message }, { status: error.status });
     }
-    return Response.json({ error: "Arquivo inválido." }, { status: 400 });
+    return Response.json({ error: "Não conseguimos abrir essa imagem. Escolha outra foto." }, { status: 400 });
   }
 
   const publicId = randomId(14);
@@ -65,19 +65,25 @@ export async function POST(request: Request) {
   const [photo] = await sql<PhotoUpload>(`SELECT * FROM photo_uploads WHERE id = $1`, [recordId]);
 
   if (!photo) {
-    return Response.json({ error: "Falha ao registrar a foto." }, { status: 500 });
+    return Response.json({ error: "Não conseguimos receber sua foto agora. Tente novamente." }, { status: 500 });
   }
 
-  const stored = await pushToStorage(photo, validated.buffer);
+  const result = await pushToStorage(photo, validated.buffer);
+  if (!result.uploaded && !result.recoverable) {
+    return Response.json(
+      { error: "Não conseguimos guardar sua foto agora. Ela continua no seu aparelho; tente novamente." },
+      { status: 503 },
+    );
+  }
 
   return Response.json(
     {
       publicId,
-      status: stored ? "uploaded" : "failed",
-      message: stored
-        ? "Foto recebida."
-        : "Recebemos sua foto e vamos tentar guardar assim que o armazenamento voltar.",
+      status: result.uploaded ? "uploaded" : "failed",
+      message: result.uploaded
+        ? "Sua foto já está guardada no Drive. Obrigada por compartilhar esse momento."
+        : "Recebemos sua foto. Ela ficou guardada temporariamente e as noivas poderão tentar enviá-la ao Drive novamente; não precisa reenviar.",
     },
-    { status: stored ? 201 : 202 },
+    { status: result.uploaded ? 201 : 202 },
   );
 }

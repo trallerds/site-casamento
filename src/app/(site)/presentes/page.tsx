@@ -27,7 +27,7 @@ export default async function GiftsPage() {
       <div className="mt-10">
         {groups.length === 0 ? (
           <p className="py-16 text-center text-sm text-navy-800/60">
-            Os presentes estão sendo atualizados. Volte em instantes.
+            Estamos preparando a lista de presentes. Volte daqui a pouquinho.
           </p>
         ) : (
           <GiftBrowser groups={groups} />

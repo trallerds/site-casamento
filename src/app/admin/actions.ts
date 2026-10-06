@@ -20,12 +20,12 @@ export type LoginState = { error?: string };
 
 export async function loginAction(_previous: LoginState, formData: FormData): Promise<LoginState> {
   if (!isAdminEnabled()) {
-    return { error: "A área administrativa está desativada: defina ADMIN_PASSWORD_HASH." };
+    return { error: "O painel ainda não está pronto para acesso. Confira a configuração inicial e tente novamente." };
   }
   const password = String(formData.get("password") ?? "");
   if (!verifyAdminPassword(password)) {
     await new Promise((resolve) => setTimeout(resolve, 400));
-    return { error: "Senha incorreta." };
+    return { error: "Não foi possível entrar. Confira a senha e tente novamente." };
   }
   const session = await createAdminSession();
   await setSessionCookie(session.token, session.expiresAt);
@@ -39,13 +39,6 @@ export async function logoutAction() {
 
 async function requireAdmin() {
   if (!(await isAuthenticated())) redirect("/admin/login");
-}
-
-async function getGiftSold(giftId: number) {
-  const [row] = await sql<{ sold: number }>(`SELECT sold_quantity AS sold FROM gifts WHERE id = $1`, [
-    giftId,
-  ]);
-  return row?.sold ?? 0;
 }
 
 function field(formData: FormData, name: string) {
@@ -62,7 +55,6 @@ export async function saveGiftAction(formData: FormData) {
   const category = field(formData, "category") || "Momentos da festa";
   const imageKey = field(formData, "image_key") || "default";
   const displayOrder = Number(field(formData, "display_order") || 0);
-  const totalQuantity = Math.max(0, Number(field(formData, "total_quantity") || 1));
   const active = formData.get("active") ? 1 : 0;
 
   if (!name || amountCents === null) {
@@ -73,8 +65,8 @@ export async function saveGiftAction(formData: FormData) {
     await run(
       `UPDATE gifts
        SET name = $1, description = $2, amount_cents = $3, category = $4, image_key = $5,
-           display_order = $6, total_quantity = $7, active = $8, updated_at = now()
-       WHERE id = $9`,
+           display_order = $6, active = $7, updated_at = now()
+       WHERE id = $8`,
       [
         name,
         description,
@@ -82,7 +74,6 @@ export async function saveGiftAction(formData: FormData) {
         category,
         imageKey,
         displayOrder,
-        Math.max(totalQuantity, await getGiftSold(id)),
         active,
         id,
       ],
@@ -97,8 +88,8 @@ export async function saveGiftAction(formData: FormData) {
     }
     await run(
       `INSERT INTO gifts
-        (slug, name, description, image_key, amount_cents, category, display_order, total_quantity, active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        (slug, name, description, image_key, amount_cents, category, display_order, active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
         slug,
         name,
@@ -107,7 +98,6 @@ export async function saveGiftAction(formData: FormData) {
         amountCents ?? 0,
         category,
         displayOrder,
-        totalQuantity,
         active,
       ],
     );

@@ -28,15 +28,15 @@ export default async function PixPage({
   if (!payment || payment.gift_id !== gift.id) {
     return (
       <div className="mx-auto max-w-md py-20 text-center">
-        <h1 className="font-display text-2xl text-navy-900">Nenhuma cobrança aberta</h1>
+        <h1 className="font-display text-2xl text-navy-900">Este Pix não está mais disponível</h1>
         <p className="mt-3 text-sm text-navy-800/70">
-          Volte para o presente e toque em “Quero presentear” para gerar o Pix.
+          Volte ao presente para preparar um novo código Pix.
         </p>
         <Link
           href={`/presentes/${gift.slug}`}
           className="mt-7 inline-block rounded-full border border-navy-900/25 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-900"
         >
-          Ver o presente
+          Voltar ao presente
         </Link>
       </div>
     );
@@ -72,8 +72,8 @@ export default async function PixPage({
               publicId: payment.public_id,
               status: payment.status,
               pixAvailable: Boolean(payment.pix_code),
-              claimed: Boolean(payment.claimed_at),
               confirmHref: `/presentes/${gift.slug}/confirmacao?p=${payment.public_id}`,
+              giftHref: `/presentes/${gift.slug}`,
               expiresAt:
                 payment.provider === "openpix"
                   ? toIso(payment.expires_at)

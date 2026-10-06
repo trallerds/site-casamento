@@ -21,7 +21,7 @@ export default function PhotosPage() {
           Deixa uma foto com a gente
         </h1>
         <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-navy-800/75">
-          Tire uma foto agora, enquanto a festa acontece. Ela vai direto para o nosso Drive.
+          Compartilhe uma lembrança com a gente. Você pode tirar uma foto ou escolher uma imagem do celular.
         </p>
       </header>
 
@@ -30,7 +30,7 @@ export default function PhotosPage() {
       </div>
 
       <p className="mt-5 text-center text-xs text-navy-800/50">
-        Formatos aceitos: JPG, PNG, WebP e HEIC, até {maxMB} MB. Sem cadastro, sem app.
+        Envie JPG, PNG, WebP ou HEIC de até {maxMB} MB. Não precisa instalar um app nem criar cadastro.
       </p>
     </div>
   );

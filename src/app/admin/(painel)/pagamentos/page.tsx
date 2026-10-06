@@ -9,7 +9,7 @@ const STATUS_LABEL: Record<string, string> = {
   paid: "Pago",
   expired: "Expirado",
   cancelled: "Cancelado",
-  failed: "Falhou",
+  failed: "Precisa de atenção",
 };
 
 export default async function AdminPaymentsPage() {
@@ -19,8 +19,8 @@ export default async function AdminPaymentsPage() {
     <div>
       <h1 className="font-display text-2xl text-navy-900">Pagamentos</h1>
       <p className="mt-2 text-sm text-navy-800/65">
-        Só o webhook do provedor marca um pagamento como pago. A confirmação manual serve para
-        conciliação quando o banco já informou o Pix por fora.
+        Os pagamentos confirmados pelo provedor são atualizados automaticamente. Se o Pix foi
+        recebido por outro meio, confira o extrato antes de selecionar &ldquo;Conciliar&rdquo;.
       </p>
 
       <div className="mt-6 overflow-x-auto rounded-xl border border-navy-900/10 bg-white">
@@ -39,7 +39,7 @@ export default async function AdminPaymentsPage() {
             {payments.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-navy-800/55">
-                  Nenhuma cobrança aberta ainda.
+                  Ainda não há pagamentos por aqui.
                 </td>
               </tr>
             ) : (
@@ -60,17 +60,13 @@ export default async function AdminPaymentsPage() {
                       {STATUS_LABEL[payment.status] ?? payment.status}
                     </span>
                     {payment.claimed_at && payment.status !== "paid" ? (
-                      <p className="mt-1 text-[0.65rem] text-gold-700">Convidado disse que pagou</p>
+                      <p className="mt-1 text-[0.65rem] text-gold-700">Aguardando conferência</p>
                     ) : null}
                     {payment.error ? (
-                      <p className="mt-1 text-[0.65rem] font-medium text-gold-700">
-                        {payment.error}
-                      </p>
-                    ) : null}
-                    {payment.oversold === 1 ? (
-                      <p className="mt-1 text-[0.65rem] font-medium text-navy-900">
-                        Pago depois das cotas acabarem — definir com o convidado
-                      </p>
+                      <details className="mt-1 text-[0.65rem] text-gold-700">
+                        <summary>Ver detalhes da cobrança</summary>
+                        <code className="mt-1 block max-w-xs break-words">{payment.error}</code>
+                      </details>
                     ) : null}
                   </td>
                   <td className="px-4 py-3 text-xs text-navy-800/60">{formatDateTime(payment.created_at)}</td>

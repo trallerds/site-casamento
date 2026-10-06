@@ -17,28 +17,41 @@ export default function PrivacyPage() {
           <p className="mt-2">
             Para enviar uma foto, o site não pede nome, e-mail, telefone, CPF nem qualquer conta. Não
             criamos login para convidados e não usamos cookies de publicidade ou de rastreamento. Para
-            que este site funcione, o servidor anota o endereço IP e o horário do envio, de forma
-            temporária, apenas para limitar envios repetidos e abuso.
+            que fotos e confirmações funcionem, o servidor usa o endereço IP e a janela de horário de
+            forma temporária para limitar envios repetidos e abuso.
           </p>
         </section>
 
         <section>
           <h2 className="font-display text-xl text-navy-900">Para que servem as fotos</h2>
           <p className="mt-2">
-            As fotos enviadas ficam armazenadas na conta de Google Drive das noivas, em uma pasta
-            privada. Elas não são publicadas neste site nem em redes sociais. As noivas decidem, depois,
-            o que desejam compartilhar. Fotos podem ser excluídas a qualquer momento, a pedido de quem
-            aparece nelas.
+            O destino das fotos é a conta privada de Google Drive das noivas. Se o Drive estiver
+            temporariamente indisponível, a foto permanece no aparelho para uma nova tentativa. Em
+            ambientes que permitem, uma cópia temporária e privada também pode ficar no servidor
+            para que as noivas tentem o envio novamente. As fotos não são publicadas neste site nem em
+            redes sociais. Quem aparece em uma foto pode pedir sua exclusão a qualquer momento.
           </p>
         </section>
 
         <section>
           <h2 className="font-display text-xl text-navy-900">Presentes e Pix</h2>
           <p className="mt-2">
-            Para presentear, o site gera um código Pix Copia e Cola para você pagar no aplicativo do
-            seu banco. Não armazenamos dados de conta bancária, senha, cartão ou CPF de ninguém. O
-            pagamento acontece inteiramente entre você e o seu banco. O site não precisa saber quem
-            pagou, não confirma pagamento e não controla estoque ou cotas de presentes.
+            Para iniciar uma contribuição, o site registra uma cobrança vinculada ao presente e gera
+            um código Pix Copia e Cola. Não recebemos nem armazenamos dados de conta bancária, senha,
+            cartão ou CPF. Quando o provedor Pix está configurado para confirmação automática, o site
+            registra o estado informado pelo provedor; no fluxo manual, as noivas podem conciliar a
+            confirmação no painel. O pagamento só é considerado confirmado após essa verificação.
+            A lista não limita presentes por quantidade nem controla disponibilidade.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="font-display text-xl text-navy-900">Confirmação de presença</h2>
+          <p className="mt-2">
+            Se você confirmar presença, o nome informado e os nomes dos acompanhantes serão enviados
+            ao Google Docs das noivas para organização do evento. O site não pede login nem contato
+            para essa confirmação. Esses dados ficam acessíveis às noivas e podem ser corrigidos ou
+            removidos mediante solicitação.
           </p>
         </section>
 

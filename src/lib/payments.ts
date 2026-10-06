@@ -70,8 +70,7 @@ export async function markPaymentPaid(options: {
     }
 
     // O valor verdadeiro e o do banco, nao o que o front-end manda.
-    // Webhook com valor divergente nao baixa cota: fica visivel no
-    // painel (error) para conciliacao manual.
+    // Webhook com valor divergente fica visivel no painel para conciliacao manual.
     if (
       options.amountCents != null &&
       Number(options.amountCents) !== payment.amount_cents

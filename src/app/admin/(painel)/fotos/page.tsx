@@ -8,7 +8,7 @@ const STATUS_LABEL: Record<string, string> = {
   received: "Recebida",
   uploading: "Enviando",
   uploaded: "Guardada",
-  failed: "Falhou",
+  failed: "Precisa de atenção",
 };
 
 export default async function AdminPhotosPage() {
@@ -18,13 +18,13 @@ export default async function AdminPhotosPage() {
     <div>
       <h1 className="font-display text-2xl text-navy-900">Fotos</h1>
       <p className="mt-2 text-sm text-navy-800/65">
-        As fotos ficam privadas. “Ocultar” remove a foto da lista do painel; o arquivo continua no
-        Drive até ser apagado por lá.
+        As fotos ficam privadas. “Remover da lista” não apaga o arquivo do Drive; para excluí-lo
+        também, remova-o diretamente na pasta do Google Drive.
       </p>
 
       {photos.length === 0 ? (
         <p className="mt-10 rounded-xl border border-navy-900/10 bg-white p-8 text-center text-sm text-navy-800/55">
-          Nenhuma foto recebida ainda.
+          As fotos compartilhadas com vocês aparecerão aqui.
         </p>
       ) : (
         <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -32,7 +32,7 @@ export default async function AdminPhotosPage() {
             <li key={photo.id} className="overflow-hidden rounded-xl border border-navy-900/10 bg-white">
               <img
                 src={`/api/photos/${photo.public_id}/file`}
-                alt={`Foto enviada ${photo.public_id}`}
+                alt="Foto compartilhada com as noivas"
                 className="aspect-[4/3] w-full object-cover"
                 loading="lazy"
               />
@@ -45,9 +45,17 @@ export default async function AdminPhotosPage() {
                 </div>
                 <p className="text-xs text-navy-800/60">{formatDateTime(photo.created_at)}</p>
                 {photo.status === "failed" ? (
-                  <p className="rounded-lg bg-gold-100/70 p-2 text-xs text-navy-900">
-                    {photo.error ?? "Falha ao guardar."}
-                  </p>
+                  <>
+                    <p className="rounded-lg bg-gold-100/70 p-2 text-xs text-navy-900">
+                      Não foi possível guardar esta foto no Drive.
+                    </p>
+                    {photo.error ? (
+                      <details className="text-xs text-navy-800/60">
+                        <summary>Ver detalhes técnicos</summary>
+                        <code className="mt-1 block break-words">{photo.error}</code>
+                      </details>
+                    ) : null}
+                  </>
                 ) : null}
                 <div className="flex gap-2 pt-1">
                   {photo.status === "failed" && photo.staging_key ? (
@@ -57,7 +65,7 @@ export default async function AdminPhotosPage() {
                         type="submit"
                         className="rounded-full border border-navy-900/15 px-3 py-1.5 text-[0.65rem] uppercase tracking-wider text-navy-800/70"
                       >
-                        Tentar de novo
+                        Tentar novamente
                       </button>
                     </form>
                   ) : null}
@@ -67,7 +75,7 @@ export default async function AdminPhotosPage() {
                       type="submit"
                       className="rounded-full border border-navy-900/15 px-3 py-1.5 text-[0.65rem] uppercase tracking-wider text-navy-800/50"
                     >
-                      Ocultar
+                      Remover da lista
                     </button>
                   </form>
                 </div>

@@ -1,18 +1,10 @@
 import Image from "next/image";
 import { BottomNav, SiteHeader } from "@/components/SiteChrome";
-import { weddingDateLabel, weddingNames, weddingDate } from "@/lib/settings";
-import { SplashScreen } from "@/components/Splash/SplashScreen";
+import { weddingDateLabel, weddingNames } from "@/lib/settings";
 
-export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const names = await weddingNames();
-  const date = await weddingDate();
-  const splashEnabled = process.env.SPLASH_ENABLED === "true";
-  
-  const shouldShowSplash = splashEnabled && date && new Date(date) > new Date();
-
+export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {shouldShowSplash && <SplashScreen weddingDate={date} names={names} />}
       <div className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(120%_80%_at_50%_0%,rgba(200,168,90,0.16),transparent_60%)]" />
       <a
         href="#conteudo"

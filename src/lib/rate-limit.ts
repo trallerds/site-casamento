@@ -53,7 +53,7 @@ export function clientIp(request: Request) {
 
 export function tooManyRequests(retryAfterSeconds: number) {
   return Response.json(
-    { error: "Muitos pedidos seguidos. Aguarde um instante e tente de novo." },
+    { error: "Estamos recebendo muitos envios deste aparelho. Aguarde um instante e tente novamente." },
     { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
   );
 }

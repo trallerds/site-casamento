@@ -1,7 +1,7 @@
 import { saveSettingsAction } from "@/app/admin/actions";
 import { getSettings } from "@/lib/settings";
 import { pixProviderHealth, pixProviderName } from "@/lib/pix";
-import { driveStorage, photoStorageHealth, photoStorageName } from "@/lib/storage";
+import { photoStorageHealth } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -20,15 +20,12 @@ export default async function AdminSettingsPage({
   searchParams: Promise<{ salvo?: string }>;
 }) {
   const query = await searchParams;
-  const [settings, pix, storage, storageMode, pixMode] = await Promise.all([
+  const [settings, pix, storage, pixMode] = await Promise.all([
     getSettings(),
     pixProviderHealth(),
     photoStorageHealth(),
-    photoStorageName(),
     pixProviderName(),
   ]);
-  const drivePreview =
-    storageMode === "drive" ? null : await driveStorage().health();
   const openpix = parseConfig(settings.pix_provider_config);
   const drive = parseConfig(settings.google_drive_config);
 
@@ -41,19 +38,19 @@ export default async function AdminSettingsPage({
         <Section title="Casamento">
           <TextField label="Nomes" name="wedding_names" defaultValue={settings.wedding_names} />
           <TextField
-            label="Data (AAAA-MM-DD)"
+            label="Data"
             name="wedding_date"
             defaultValue={settings.wedding_date}
+            type="date"
           />
+          <TextField label="Horário" name="wedding_time" defaultValue={settings.wedding_time ?? "19:00"} type="time" />
+          <TextField label="Local" name="wedding_venue" defaultValue={settings.wedding_venue} />
+          <TextField label="Endereço" name="wedding_address" defaultValue={settings.wedding_address} />
+          <TextField label="Link do Google Maps" name="wedding_maps_url" defaultValue={settings.wedding_maps_url ?? "https://share.google/D9bzAuECKilvEbU6t"} type="url" />
+          <TextField label="Estacionamento / acesso" name="wedding_parking" defaultValue={settings.wedding_parking} />
+          <TextField label="Link ou arquivo do convite" name="wedding_invitation_url" defaultValue={settings.wedding_invitation_url} placeholder="https://…" type="url" />
+          <TextField label="Dress code" name="wedding_dress_code" defaultValue={settings.wedding_dress_code ?? "Social"} />
           <TextField label="Frase da capa" name="hero_title" defaultValue={settings.hero_title} />
-          <TextField label="Título da história" name="story_title" defaultValue={settings.story_title} />
-          <TextField
-            label="Texto da história"
-            name="story_text"
-            defaultValue={settings.story_text}
-            textarea
-            rows={5}
-          />
         </Section>
 
         <Section title="Pix">
@@ -102,15 +99,10 @@ export default async function AdminSettingsPage({
         </Section>
 
         <Section title="Fotos">
-          <SelectField
-            label="Onde guardar"
-            name="photo_storage"
-            defaultValue={storageMode}
-            options={[
-              { value: "local", label: "Neste servidor (data/uploads)" },
-              { value: "drive", label: "Google Drive das noivas" },
-            ]}
-          />
+          <p className="text-sm leading-relaxed text-navy-800/70">
+            As fotos são guardadas no Google Drive das noivas. Se o Drive ficar indisponível, o envio
+            será mantido temporariamente para uma nova tentativa.
+          </p>
           <TextField
             label="ID da pasta no Drive"
             name="google_drive_folder_id"
@@ -147,15 +139,8 @@ export default async function AdminSettingsPage({
             message={`${pix.provider}: ${pix.message}`}
           />
           <StatusRow title="Fotos" ok={storage.ok} message={storage.message} />
-          {drivePreview ? (
-            <StatusRow
-              title="Google Drive (ainda não em uso)"
-              ok={drivePreview.ok}
-              message={drivePreview.message}
-            />
-          ) : null}
           <p className="text-xs leading-relaxed text-navy-800/55">
-            O teste do Drive usa as credenciais informadas acima: se aparecer o nome da pasta, a
+            A verificação usa as credenciais informadas acima: se aparecer o nome da pasta, a
             conta que autorizou tem permissão de escrita nela. Autorize com{" "}
             <code>npm run drive:auth</code> entrando na conta que é dona da pasta (ou que tem
             acesso de edição), não necessariamente no e-mail das noivas. Pasta compartilhada com

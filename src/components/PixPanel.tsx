@@ -8,33 +8,27 @@ export type PixPaymentView = {
   publicId: string;
   status: "pending" | "paid" | "expired" | "cancelled" | "failed";
   pixAvailable: boolean;
-  claimed: boolean;
   confirmHref: string;
+  giftHref: string;
   expiresAt: string | null;
 };
 
 type CopyState = "idle" | "loading" | "copied" | "manual";
+type PixState = "idle" | "generating" | "ready" | "error";
 
-// O QR e um documento impresso: cantos retos, area branca e o
-// texto de apoio com a mesma largura do canvas, senao a legenda
-// mais larga que o QR e o joga para um lado dentro do card.
 const QR_SIZE = 220;
 
 export function PixPanel({ payment }: { payment: PixPaymentView }) {
   const [status, setStatus] = useState(payment.status);
-  const [claimed, setClaimed] = useState(payment.claimed);
   const [pixCode, setPixCode] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<CopyState>("idle");
+  const [pixState, setPixState] = useState<PixState>("idle");
   const [message, setMessage] = useState("");
-  const [claiming, setClaiming] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const manualRef = useRef<HTMLTextAreaElement | null>(null);
 
   const isPending = status === "pending";
 
-  // Cobranca com prazo real (OpenPix): depois da validade o
-  // banco recusa o codigo, entao mostramos o estado expirado
-  // mesmo enquanto o registro ainda diz "pending".
   const isExpired =
     status === "expired" ||
     (isPending &&
@@ -43,22 +37,29 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
 
   const ensureCode = useCallback(async () => {
     if (pixCode) return pixCode;
-    const response = await fetch(`/api/payments/${payment.publicId}/pix-code`, {
-      method: "POST",
-      cache: "no-store",
-    });
-    const body = (await response.json()) as { pixCopyPaste?: string; error?: string };
-    if (!response.ok || !body.pixCopyPaste) {
-      throw new Error(body.error ?? "Não conseguimos gerar o Pix agora.");
+    setPixState("generating");
+    try {
+      const response = await fetch(`/api/payments/${payment.publicId}/pix-code`, {
+        method: "POST",
+        cache: "no-store",
+      });
+      const body = (await response.json()) as { pixCopyPaste?: string };
+      if (!response.ok || !body.pixCopyPaste) {
+        throw new Error("Pix unavailable");
+      }
+      setPixCode(body.pixCopyPaste);
+      setPixState("ready");
+      return body.pixCopyPaste;
+    } catch {
+      setPixState("error");
+      setMessage("Não conseguimos preparar o Pix agora. Tente novamente em instantes.");
+      return null;
     }
-    setPixCode(body.pixCopyPaste);
-    return body.pixCopyPaste;
   }, [payment.publicId, pixCode]);
 
   useEffect(() => {
     if (!isPending || !payment.pixAvailable) return;
-    if (!window.matchMedia("(min-width: 768px)").matches) return;
-    ensureCode().catch(() => setPixCode(null));
+    ensureCode().catch(() => setPixState("error"));
   }, [isPending, payment.pixAvailable, ensureCode]);
 
   useEffect(() => {
@@ -69,10 +70,9 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
       try {
         const response = await fetch(`/api/payments/${payment.publicId}`, { cache: "no-store" });
         if (!response.ok) return;
-        const body = (await response.json()) as { status: PixPaymentView["status"]; claimed: boolean };
+        const body = (await response.json()) as { status: PixPaymentView["status"] };
         if (cancelled) return;
         setStatus(body.status);
-        setClaimed(body.claimed);
       } catch {
         return;
       }
@@ -102,6 +102,16 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
     }
   }, [copyState]);
 
+  useEffect(() => {
+    if (copyState === "copied") {
+      const timer = setTimeout(() => {
+        setCopyState("idle");
+        setMessage("");
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copyState]);
+
   const legacyCopy = (value: string) => {
     const area = document.createElement("textarea");
     area.value = value;
@@ -119,38 +129,25 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
   const copy = useCallback(async () => {
     setCopyState("loading");
     setMessage("");
+    const code = await ensureCode();
+    if (!code) {
+      setCopyState("idle");
+      return;
+    }
+
     try {
-      const code = await ensureCode();
       const secureClipboard =
         typeof navigator.clipboard?.writeText === "function" && window.isSecureContext;
       const ok = secureClipboard ? await navigator.clipboard.writeText(code) : legacyCopy(code);
       if (ok === false) throw new Error("clipboard indisponível");
       setCopyState("copied");
-      setMessage("Pix copiado!");
+      setMessage("Pix copiado. Agora é só colar no app do seu banco.");
     } catch {
       setCopyState("manual");
-      setMessage("Toque no código abaixo e segure para copiar.");
-      try {
-        const code = await ensureCode();
-        setPixCode(code);
-      } catch {
-        setMessage("Não conseguimos gerar o Pix agora. Tente novamente em alguns instantes.");
-        setCopyState("idle");
-      }
+      setMessage("Selecione o código abaixo e copie para o app do seu banco.");
+      setPixCode(code);
     }
   }, [ensureCode]);
-
-  const claim = useCallback(async () => {
-    setClaiming(true);
-    try {
-      const response = await fetch(`/api/payments/${payment.publicId}/manual-confirmation`, { method: "POST" });
-      if (response.ok) setClaimed(true);
-    } catch {
-      /* a confirmação manual é apenas um registro */
-    } finally {
-      setClaiming(false);
-    }
-  }, [payment.publicId]);
 
   if (status === "paid") {
     return (
@@ -160,13 +157,13 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
           Obrigada por fazer parte desse momento
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-navy-800/75">
-          Seu presente já apareceu para as noivas.
+          As noivas já receberam seu presente. Obrigada pelo carinho.
         </p>
         <Link
           href={payment.confirmHref}
           className="mt-7 inline-block rounded-full bg-navy-900 px-8 py-4 text-sm uppercase tracking-[0.2em] text-ivory transition active:scale-[0.98]"
         >
-          Ver a msg das noivas
+          Ver mensagem das noivas
         </Link>
       </div>
     );
@@ -176,16 +173,16 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
     return (
       <div className="text-center">
         <h2 className="font-display text-2xl text-navy-900">
-          {status === "expired" ? "Esse Pix expirou" : "Não conseguimos continuar"}
+          {status === "expired" ? "O prazo deste Pix terminou" : "Vamos tentar de novo?"}
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-navy-800/75">
-          Volte para a lista e gere um novo código Pix, é instantâneo.
+          Este código não está mais disponível. Volte ao presente para preparar outro Pix.
         </p>
         <Link
-          href="/presentes"
+          href={payment.giftHref}
           className="mt-7 inline-block rounded-full border border-navy-900/25 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-900 transition hover:border-gold-500 hover:text-gold-700 active:scale-[0.98]"
         >
-          Ver presentes
+          Voltar ao presente
         </Link>
       </div>
     );
@@ -195,25 +192,40 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
     <div>
       <p className="text-center text-sm uppercase tracking-[0.2em] text-gold-700">Pagamento Pix</p>
       <p className="mt-4 text-center text-sm leading-relaxed text-navy-800/75">
-        Toque no botão, abra o aplicativo do seu banco, cole e confirme. O valor já vai preenchido.
+        Toque em &ldquo;Copiar Pix&rdquo;, abra o app do seu banco, cole o código e confirme. O valor já vai preenchido.
       </p>
 
       <button
         type="button"
         onClick={copy}
-        disabled={copyState === "loading"}
+        disabled={copyState === "loading" || pixState === "generating" || pixState === "error"}
         className="mt-6 w-full rounded-full bg-navy-900 px-8 py-5 text-sm uppercase tracking-[0.2em] text-ivory shadow-soft transition hover:bg-navy-800 active:scale-[0.98] disabled:opacity-60"
       >
-        {copyState === "loading"
+        {pixState === "generating"
           ? "Gerando o Pix…"
-          : copyState === "copied"
-            ? "Pix copiado!"
-            : "Copiar Pix"}
+          : pixState === "error"
+            ? "Pix indisponível no momento"
+            : copyState === "loading"
+              ? "Copiando…"
+              : copyState === "copied"
+                ? "Pix copiado!"
+                : "Copiar Pix"}
       </button>
 
-      <p aria-live="polite" className="mt-3 min-h-5 text-center text-xs text-navy-800/65">
-        {message || "O código completo é copiado, sem precisar ser exposto na tela."}
-      </p>
+      {pixState === "error" && (
+        <div className="mt-3 text-center">
+          <p className="text-sm text-gold-700">{message}</p>
+          <button
+            type="button"
+            onClick={() => { setPixState("idle"); setMessage(""); void ensureCode(); }}
+            className="mt-2 inline-block text-sm underline decoration-gold-500/60 underline-offset-4 text-navy-900 transition hover:text-gold-700"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      <p aria-live="polite" className="mt-3 min-h-5 text-center text-xs text-navy-800/65">{message}</p>
 
       {copyState === "manual" && pixCode ? (
         <div className="mt-4 rounded-xl border border-gold-500/40 bg-gold-100/50 p-4">
@@ -236,43 +248,32 @@ export function PixPanel({ payment }: { payment: PixPaymentView }) {
             type="button"
             onClick={() => {
               manualRef.current?.select();
-              if (legacyCopy(pixCode)) setMessage("Pix copiado!");
+              if (legacyCopy(pixCode)) setMessage("Pix copiado. Agora é só colar no app do seu banco.");
             }}
             className="mt-3 w-full rounded-full border border-navy-900/25 px-5 py-3 text-xs uppercase tracking-[0.18em] text-navy-900 transition active:scale-[0.98]"
           >
-            Selecionar e copiar
+            Copiar código Pix
           </button>
         </div>
       ) : null}
 
-      <div className="mt-8 hidden justify-center md:flex">
-        {pixCode ? (
-          <figure className="w-fit bg-white p-4">
-            <canvas ref={canvasRef} role="img" aria-label="QR Code do Pix" className="block" />
+      {pixCode && (
+        <div className="mt-8 grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <p className="text-center text-xs leading-relaxed text-navy-800/55 md:text-left">
+            Para escanear o QR Code, abra esta página em outro dispositivo. No celular, prefira copiar o Pix.
+          </p>
+          <figure className="w-fit max-w-full justify-self-center bg-white p-3 md:justify-self-end md:p-4">
+            <canvas ref={canvasRef} role="img" aria-label="QR Code do Pix" className="block h-auto max-w-full" />
             <figcaption
               style={{ width: QR_SIZE }}
               className="mt-3 text-balance text-center text-[0.65rem] uppercase leading-relaxed tracking-[0.16em] text-navy-800/50"
             >
-              Ou leia com a câmera do banco
+              QR Code (opcional)
             </figcaption>
           </figure>
-        ) : null}
-      </div>
+        </div>
+      )}
 
-      <div className="mt-9 border-t border-navy-900/10 pt-6 text-center">
-        <button
-          type="button"
-          onClick={claim}
-          disabled={claiming || claimed}
-          className="text-sm text-navy-800/75 underline decoration-gold-500/60 underline-offset-4 transition hover:text-navy-900 disabled:opacity-60"
-        >
-          {claimed ? "Já registramos que você pagou ✓" : claiming ? "Registrando…" : "Já fiz meu Pix"}
-        </button>
-        <p className="mt-3 text-xs leading-relaxed text-navy-800/50">
-          Esse botão não confirma o pagamento: ele só avisa as noivas de que você já pagou, para
-          conferência mais rápida. A confirmação real é sempre a do banco.
-        </p>
-      </div>
     </div>
   );
 }

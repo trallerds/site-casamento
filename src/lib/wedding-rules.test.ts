@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { after, before, describe, test } from "node:test";
+import { after, describe, test } from "node:test";
 import { run, sql } from "./db";
 import { markPaymentPaid, registerPaymentEvent } from "./payments";
 import { listActiveGifts } from "./queries";
@@ -13,11 +13,11 @@ import { localStorage } from "./storage/local";
  * Regras de dinheiro do Deixa Aqui. Roda contra um banco de teste: apague as
  * tabelas gift/payment que comecam com "test-" se rodar contra producao.
  */
-async function newGift(slug: string, total: number) {
+async function newGift(slug: string) {
   const [row] = await sql<{ id: number }>(
-    `INSERT INTO gifts (slug, name, amount_cents, total_quantity, active)
-     VALUES ($1, $2, 1000, $3, 1) RETURNING id`,
-    [slug, slug, total],
+    `INSERT INTO gifts (slug, name, amount_cents, active)
+     VALUES ($1, $2, 1000, 1) RETURNING id`,
+    [slug, slug],
   );
   return row.id;
 }
@@ -31,59 +31,26 @@ async function newPayment(giftId: number, tag: string) {
   return row.id;
 }
 
-async function available(giftId: number) {
-  const [row] = await sql<{ d: number }>(
-    `SELECT total_quantity - sold_quantity AS d FROM gifts WHERE id = $1`,
-    [giftId],
-  );
-  return Number(row.d);
-}
-
 const pay = (paymentId: number, eventId: string) =>
   markPaymentPaid({ paymentId, providerEventId: eventId, eventType: "charge.paid", payload: "{}" });
 
-describe("presente: cota", () => {
-  test("ultima cota vendida a um so nao permite compra dupla", async () => {
-    const giftId = await newGift("test-cota-unica", 1);
+describe("presentes sem limite de quantidade", () => {
+  test("contribuicoes nao limitam o presente nem o removem da lista", async () => {
+    const giftId = await newGift("test-sem-limite");
     const first = await newPayment(giftId, "a");
     const second = await newPayment(giftId, "b");
-
-    // Disparado em paralelo de proposito: e a corrida real de duas requisicoes
-    // em instancias distintas da Vercel, nao duas chamadas em fila.
-    const [winner, loser] = await Promise.all([pay(first, "evt-cota-1"), pay(second, "evt-cota-2")]);
-
-    const soldOut = [winner, loser].filter((result) => result.sale?.soldOut === true);
-    assert.equal(soldOut.length, 1, "exatamente um dos dois deve ficar fora das cotas");
-    assert.equal(await available(giftId), 0, "nenhuma cota pode sobrar nem ser vendida duas vezes");
-
-    const oversold = await sql<{ id: number }>(
-      `SELECT id FROM payments WHERE id = ANY($1::bigint[]) AND oversold = 1`,
-      [[first, second]],
-    );
-    assert.equal(oversold.length, 1, "o pagamento fora das cotas precisa ficar visivel no painel");
-  });
-
-  test("presente pago some da lista de disponiveis", async () => {
-    const slug = "test-sai-da-lista";
-    const giftId = await newGift(slug, 1);
+    await Promise.all([pay(first, "evt-sem-limite-1"), pay(second, "evt-sem-limite-2")]);
 
     assert.ok(
-      (await listActiveGifts()).some((gift) => gift.slug === slug),
-      "presente com cota deve aparecer antes do pagamento",
-    );
-
-    await pay(await newPayment(giftId, "c"), "evt-lista-1");
-
-    assert.ok(
-      !(await listActiveGifts()).some((gift) => gift.slug === slug),
-      "presente esgotado nao pode continuar sendo ofertado",
+      (await listActiveGifts()).some((gift) => gift.slug === "test-sem-limite"),
+      "presente ativo continua na lista apos contribuicoes",
     );
   });
 });
 
 describe("webhook: idempotencia", () => {
-  test("mesmo providerEventId nunca baixa a cota duas vezes", async () => {
-    const giftId = await newGift("test-idem", 3);
+  test("mesmo providerEventId nunca confirma o pagamento duas vezes", async () => {
+    const giftId = await newGift("test-idem");
     const paymentId = await newPayment(giftId, "d");
 
     const first = await pay(paymentId, "evt-idem-1");
@@ -93,11 +60,10 @@ describe("webhook: idempotencia", () => {
     assert.equal(replay.alreadyProcessed, true, "replay do mesmo evento deve ser reconhecido");
     assert.equal(replay.updated, false, "replay nao pode re-aplicar o pagamento");
 
-    assert.equal(await available(giftId), 2, "cota deve ter baixado uma unica vez");
   });
 
   test("webhook com valor divergente nao marca como pago", async () => {
-    const giftId = await newGift("test-valor", 2);
+    const giftId = await newGift("test-valor");
     const paymentId = await newPayment(giftId, "e");
 
     // O registro e 1000 centavos; o webhook diz 999.
@@ -110,7 +76,6 @@ describe("webhook: idempotencia", () => {
     });
     assert.equal(wrong.updated, false, "valor divergente nao pode confirmar");
     assert.equal(wrong.amountMismatch, true);
-    assert.equal(await available(giftId), 2, "cota nao pode baixar com valor errado");
 
     const [row] = await sql<{ status: string; error: string | null }>(
       `SELECT status, error FROM payments WHERE id = $1`,
@@ -120,8 +85,8 @@ describe("webhook: idempotencia", () => {
     assert.ok(row.error?.includes("999"), "motivo fica visivel para conciliacao");
   });
 
-  test("webhook com valor correto baixa a cota", async () => {
-    const giftId = await newGift("test-valor-ok", 2);
+  test("webhook com valor correto confirma o pagamento", async () => {
+    const giftId = await newGift("test-valor-ok");
     const paymentId = await newPayment(giftId, "f");
 
     const ok = await markPaymentPaid({
@@ -132,7 +97,6 @@ describe("webhook: idempotencia", () => {
       amountCents: 1000,
     });
     assert.equal(ok.updated, true);
-    assert.equal(await available(giftId), 1);
   });
 
   test("registerPaymentEvent guarda so um registro por evento do provedor", async () => {
@@ -189,7 +153,7 @@ describe("foto: retry", () => {
       [publicId, `staging/${publicId}.jpg`],
     );
 
-    // storage explicito: o teste nao pode depender do photo_storage do banco
+    // storage explicito: o teste nao depende do provedor configurado no banco
     const result = await retryFailedPhoto(publicId, localStorage);
     assert.equal(result.ok, true, `retry falhou: ${result.message}`);
 

@@ -59,8 +59,7 @@ export default async function GiftDetailPage({ params }: { params: Promise<{ slu
           </div>
 
           <p className="mt-5 text-xs leading-relaxed text-navy-800/55">
-            Ao continuar você recebe um Pix Copia e Cola para pagar no aplicativo do seu banco. Nenhum
-            dado do seu banco passa por este site.
+            O pagamento acontece no app do seu banco. Não temos acesso aos seus dados bancários.
           </p>
         </div>
       </div>

@@ -2,52 +2,32 @@ import Link from "next/link";
 import { formatBRL } from "@/lib/format";
 import { dashboardStats, giftPaymentTotals } from "@/lib/queries";
 import { pixProviderHealth } from "@/lib/pix";
-import { photoStorageHealth, photoStorageName } from "@/lib/storage";
+import { photoStorageHealth } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const [stats, totals, pix, storage, storageMode] = await Promise.all([
+  const [stats, totals, pix, storage] = await Promise.all([
     dashboardStats(),
     giftPaymentTotals(),
     pixProviderHealth(),
     photoStorageHealth(),
-    photoStorageName(),
   ]);
 
   const cards = [
     { label: "Total recebido", value: formatBRL(stats.paid_cents), hint: `${stats.payments_paid} pagamentos confirmados` },
     { label: "Presentes patrocinados", value: String(stats.payments_paid), hint: `${stats.payments_pending} cobranças em aberto` },
-    { label: "Fotos recebidas", value: String(stats.photos_total), hint: `${stats.photos_uploaded} no armazenamento` },
+    { label: "Fotos recebidas", value: String(stats.photos_total), hint: `${stats.photos_uploaded} guardadas no Drive` },
     {
-      label: "A reconciliar",
+      label: "Pagamentos a conferir",
       value: String(stats.payments_unreconciled),
-      hint: "convidados já disseram que pagaram",
-    },
-    {
-      label: "Presentes esgotados",
-      value: String(stats.gifts_sold_out),
-      hint: `${stats.payments_oversold} pagamento(s) após o fim das cotas`,
+      hint: "aguardando conferência no extrato",
     },
   ];
 
   return (
     <div>
       <h1 className="font-display text-2xl text-navy-900">Dashboard</h1>
-
-      {(storageMode === "local") ? (
-        <div className="mt-5 rounded-xl border border-gold-600/40 bg-gold-100/60 p-5">
-          <p className="text-sm font-medium text-navy-900">
-            As fotos NÃO estão indo para o Google Drive
-          </p>
-          <p className="mt-1 text-sm leading-relaxed text-navy-800/80">
-            Hoje elas ficam salvas apenas neste servidor, em <code>data/uploads</code>. Para gravar na
-            pasta do Drive, configure as credenciais em Configurações → Fotos e troque “Onde guardar”
-            para <em>Google Drive das noivas</em>. Isso exige rodar <code>npm run drive:auth</code> uma
-            vez, entrando na conta que tem acesso de escrita à pasta.
-          </p>
-        </div>
-      ) : null}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
@@ -81,7 +61,7 @@ export default async function AdminDashboardPage() {
               <tr>
                 <th className="px-4 py-3 font-medium">Presente</th>
                 <th className="px-4 py-3 font-medium">Valor</th>
-                <th className="px-4 py-3 font-medium">Cotas</th>
+                <th className="px-4 py-3 font-medium">Contribuições</th>
                 <th className="px-4 py-3 font-medium">Recebido</th>
                 <th className="px-4 py-3 font-medium">Status</th>
               </tr>
