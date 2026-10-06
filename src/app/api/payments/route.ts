@@ -1,4 +1,4 @@
-import { findGiftById, isGiftAvailable } from "@/lib/queries";
+import { findGiftById } from "@/lib/queries";
 import { createPaymentForGift } from "@/lib/payments";
 import { PixError } from "@/lib/pix";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
@@ -29,13 +29,6 @@ export async function POST(request: Request) {
   const gift = await findGiftById(giftId);
   if (!gift || !gift.active) {
     return Response.json({ error: "Presente indisponível." }, { status: 404 });
-  }
-
-  if (!isGiftAvailable(gift)) {
-    return Response.json(
-      { error: "Este presente já acabou de esgotar. Escolha outro na lista." },
-      { status: 409 },
-    );
   }
 
   if (gift.amount_cents <= 0) {

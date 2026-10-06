@@ -1,4 +1,3 @@
-import type { PoolClient } from "pg";
 import { run, sql, tx, type Gift, type Payment } from "@/lib/db";
 import { randomId } from "@/lib/format";
 import { getPixProvider, PixError } from "@/lib/pix";
@@ -38,37 +37,6 @@ export async function createPaymentForGift(gift: Gift) {
   return { id: row.id, publicId };
 }
 
-export type SaleResult = {
-  soldOut: boolean;
-  remaining: number | null;
-};
-
-/**
- * Baixa uma cota do presente. A condição no WHERE garante que duas pessoas
- * não comprem a última unidade ao mesmo tempo: só uma requisição afeta linhas.
- */
-async function claimGiftUnit(client: PoolClient, giftId: number): Promise<SaleResult> {
-  const updated = await client.query(
-    `UPDATE gifts SET sold_quantity = sold_quantity + 1, updated_at = now()
-     WHERE id = $1 AND total_quantity - sold_quantity > 0`,
-    [giftId],
-  );
-
-  if ((updated.rowCount ?? 0) > 0) {
-    const { rows } = await client.query<{ available: number }>(
-      `SELECT total_quantity - sold_quantity AS available FROM gifts WHERE id = $1`,
-      [giftId],
-    );
-    return { soldOut: false, remaining: rows[0]?.available ?? null };
-  }
-
-  const { rows } = await client.query<{ available: number }>(
-    `SELECT total_quantity - sold_quantity AS available FROM gifts WHERE id = $1`,
-    [giftId],
-  );
-  return { soldOut: true, remaining: rows[0]?.available ?? 0 };
-}
-
 export async function markPaymentPaid(options: {
   paymentId: number;
   providerEventId: string;
@@ -78,7 +46,6 @@ export async function markPaymentPaid(options: {
 }): Promise<{
   alreadyProcessed: boolean;
   updated: boolean;
-  sale: SaleResult | null;
   amountMismatch?: boolean;
 }> {
   return tx(async (client) => {
@@ -126,12 +93,7 @@ export async function markPaymentPaid(options: {
       [options.paymentId],
     );
 
-    const sale = await claimGiftUnit(client, payment.gift_id);
-    if (sale.soldOut) {
-      await client.query(`UPDATE payments SET oversold = 1 WHERE id = $1`, [options.paymentId]);
-    }
-
-    return { alreadyProcessed: false, updated: true, sale };
+    return { alreadyProcessed: false, updated: true, sale: null };
   });
 }
 

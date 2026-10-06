@@ -31,13 +31,13 @@ export type PaymentJoinedRow = Payment & { gift_name: string; gift_slug: string 
 export async function listActiveGifts() {
   return sql<GiftRow>(
     `SELECT * FROM gifts
-     WHERE active = 1 AND total_quantity - sold_quantity > 0
+     WHERE active = 1
      ORDER BY display_order ASC, id ASC`,
   );
 }
 
 export function isGiftAvailable(gift: GiftRow) {
-  return gift.active === 1 && gift.total_quantity - gift.sold_quantity > 0;
+  return gift.active === 1;
 }
 
 export async function listAllGifts() {

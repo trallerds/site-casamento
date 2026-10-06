@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { GiftArt } from "@/components/GiftArt";
 import { StartGiftButton } from "@/components/StartGiftButton";
 import { formatBRL } from "@/lib/format";
-import { findGiftBySlug, isGiftAvailable } from "@/lib/queries";
+import { findGiftBySlug } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,6 @@ export default async function GiftDetailPage({ params }: { params: Promise<{ slu
   const { slug } = await params;
   const gift = await findGiftBySlug(slug);
   if (!gift || !gift.active) notFound();
-  const available = isGiftAvailable(gift);
 
   return (
     <article className="mx-auto max-w-2xl pt-6">
@@ -51,18 +50,12 @@ export default async function GiftDetailPage({ params }: { params: Promise<{ slu
 
           <p className="font-display text-2xl text-navy-900">{formatBRL(gift.amount_cents)}</p>
            <p className="mt-1 text-xs text-navy-800/55">
-             Contribuição sugerida para este presente. O mais importante é o carinho. 💙
+             Valor sugerido. Contribua com o quanto fizer sentido para você.
            </p>
 
 
           <div className="mt-8">
-            {available ? (
-              <StartGiftButton giftId={gift.id} slug={gift.slug} />
-            ) : (
-              <p className="rounded-full border border-navy-900/20 px-8 py-4 text-sm uppercase tracking-[0.2em] text-navy-800/50">
-                Indisponível no momento
-              </p>
-            )}
+            <StartGiftButton giftId={gift.id} slug={gift.slug} />
           </div>
 
           <p className="mt-5 text-xs leading-relaxed text-navy-800/55">

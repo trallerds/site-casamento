@@ -35,10 +35,10 @@ export default function PrivacyPage() {
         <section>
           <h2 className="font-display text-xl text-navy-900">Presentes e Pix</h2>
           <p className="mt-2">
-            O site gera um código Pix e registra que uma cobrança foi aberta, quando o pagamento foi
-            confirmado e para qual presente ele foi direcionado. Não armazenamos dados de conta
-            bancária, senha, cartão ou CPF de ninguém. O pagamento acontece inteiramente entre você e
-            o aplicativo do seu banco.
+            Para presentear, o site gera um código Pix Copia e Cola para você pagar no aplicativo do
+            seu banco. Não armazenamos dados de conta bancária, senha, cartão ou CPF de ninguém. O
+            pagamento acontece inteiramente entre você e o seu banco. O site não precisa saber quem
+            pagou, não confirma pagamento e não controla estoque ou cotas de presentes.
           </p>
         </section>
 
