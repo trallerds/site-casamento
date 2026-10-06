@@ -11,7 +11,7 @@ export function GiftCard({ gift }: { gift: GiftRow }) {
     >
       <div className="relative overflow-hidden">
         <GiftArt 
-          imageKey={gift.image_key} 
+          imageKey={gift.slug}
           className="aspect-[4/3] w-full transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-900/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />

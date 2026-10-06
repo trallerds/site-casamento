@@ -56,7 +56,7 @@ export default async function PixPage({
           {/* Ilustracao: sem radius proprio, e o card que recorta.
               Radius dentro de radius e o que ficava estranho. */}
           <GiftArt 
-            imageKey={gift.image_key} 
+              imageKey={gift.slug}
             className="mx-auto h-24 w-24" 
           />
           <p className="mt-4 text-[0.65rem] uppercase tracking-[0.24em] text-navy-800/55">

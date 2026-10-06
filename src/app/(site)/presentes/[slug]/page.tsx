@@ -35,7 +35,7 @@ export default async function GiftDetailPage({ params }: { params: Promise<{ slu
 
       <div className="mt-5 overflow-hidden rounded-card border border-navy-900/10 bg-white shadow-soft">
         <GiftArt 
-          imageKey={gift.image_key} 
+          imageKey={gift.slug}
           className="aspect-[16/10] w-full" 
         />
         <div className="px-6 py-8 text-center md:px-10">
