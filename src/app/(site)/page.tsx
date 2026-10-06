@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CallLily, Flourish, Trigo } from "@/components/Botanical";
 import { GiftCard } from "@/components/GiftCard";
-import { getSetting, weddingDateLabel, weddingNames } from "@/lib/settings";
+import { getSetting, weddingDate, weddingDateLabel, weddingNames, weddingTime } from "@/lib/settings";
 import { listActiveGifts } from "@/lib/queries";
 import { WeddingHub } from "@/components/WeddingHub";
 
@@ -25,8 +25,8 @@ export default async function HomePage() {
     weddingDateLabel(),
     listActiveGifts(),
     getSetting("hero_title"),
-    getSetting("wedding_date"),
-    getSetting("wedding_time"),
+    weddingDate(),
+    weddingTime(),
     getSetting("wedding_venue"),
     getSetting("wedding_address"),
     getSetting("wedding_maps_url"),
@@ -79,7 +79,7 @@ export default async function HomePage() {
         names={names}
         dateLabel={date}
         date={rawDate ?? ""}
-        time={time || "19:30"}
+        time={time}
         venue={venue ?? ""}
         address={address ?? ""}
         mapsUrl={mapsUrl || "https://share.google/D9bzAuECKilvEbU6t"}

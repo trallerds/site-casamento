@@ -53,13 +53,25 @@ export async function weddingNames() {
 }
 
 export async function weddingDate() {
-  return (await getSetting("wedding_date")) || process.env.WEDDING_DATE || "";
+  const raw = (await getSetting("wedding_date")) || process.env.WEDDING_DATE || "";
+  const date = raw.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return "";
+  const timestamp = Date.parse(`${date}T12:00:00Z`);
+  return Number.isNaN(timestamp) || new Date(timestamp).toISOString().slice(0, 10) !== date ? "" : date;
+}
+
+export async function weddingTime() {
+  return (await getSetting("wedding_time")) || process.env.WEDDING_TIME || "19:30";
 }
 
 export async function weddingDateLabel() {
   const raw = await weddingDate();
   if (!raw) return "";
-  const date = new Date(`${raw}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return raw;
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  const date = new Date(`${raw}T12:00:00Z`);
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
