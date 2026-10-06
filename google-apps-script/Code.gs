@@ -6,10 +6,11 @@
  *   2. Project Settings -> Script Properties -> Add:
  *        GOOGLE_APPS_SCRIPT_SECRET = string longa e aleatoria (openssl rand -hex 32)
  *      O mesmo valor vai no Vercel como GOOGLE_APPS_SCRIPT_SECRET.
- *   3. Deploy -> New deployment -> Web app
+ *   3. Primeira publicação: Deploy -> New deployment -> Web app
  *        Execute as: Me
  *        Who has access: Anyone      <- obrigatorio (o fetch do Vercel e anonimo)
  *   4. A URL /exec vai no Vercel como GOOGLE_APPS_SCRIPT_URL
+ *   5. Depois de alterar o codigo: Manage deployments -> Edit -> New version -> Deploy
  *
  * Superficie: save, read, health e appendRsvp (Google Doc por Script Property).
  * Nada de create, move, trash ou escolha de pasta para os arquivos.
@@ -91,7 +92,7 @@ function doPost(e) {
   try {
     if (body.action === "health") {
       var folder = folder_();
-      return json_({ ok: true, count: folder.getFiles().length, folder: folder.getName() });
+      return json_({ ok: true, folder: folder.getName() });
     }
 
     if (body.action === "appendRsvp") {
@@ -99,7 +100,12 @@ function doPost(e) {
       if (!documentId) throw new Error("RSVP_DOC_ID nao configurado");
       var guestName = String(body.name || "").replace(/[\u0000-\u001f\u007f]/g, " ").trim();
       var guests = Array.isArray(body.companions) ? body.companions : [];
-      if (!guestName || guestName.length > 100 || guests.length > 5) throw new Error("confirmacao invalida");
+      var companions = guests.map(function(name) {
+        return String(name || "").replace(/[\u0000-\u001f\u007f]/g, " ").trim();
+      }).filter(Boolean);
+      if (guestName.split(/\s+/).length < 2 || guestName.length > 100 || companions.length > 5 || companions.some(function(name) { return name.length > 100; })) {
+        throw new Error("informe nome completo e ate cinco acompanhantes");
+      }
       var lock = LockService.getScriptLock();
       lock.waitLock(10000);
       try {
@@ -109,9 +115,8 @@ function doPost(e) {
         documentBody.appendParagraph(String(body.couple || "Jéssica & Jennifer"));
         documentBody.appendParagraph(Utilities.formatDate(new Date(), "America/Sao_Paulo", "dd/MM/yyyy · HH:mm"));
         documentBody.appendParagraph(guestName);
-        guests.forEach(function(name) {
-          var companion = String(name || "").replace(/[\u0000-\u001f\u007f]/g, " ").trim();
-          if (companion && companion.length <= 100) documentBody.appendParagraph(companion);
+        companions.forEach(function(name) {
+          documentBody.appendParagraph(name);
         });
         documentBody.appendParagraph("");
         document.saveAndClose();
