@@ -48,7 +48,7 @@ export default async function AdminSettingsPage({
           <TextField label="Endereço" name="wedding_address" defaultValue={settings.wedding_address} />
           <TextField label="Link do Google Maps" name="wedding_maps_url" defaultValue={settings.wedding_maps_url ?? "https://share.google/D9bzAuECKilvEbU6t"} type="url" />
           <TextField label="Estacionamento / acesso" name="wedding_parking" defaultValue={settings.wedding_parking} />
-          <TextField label="Link ou arquivo do convite" name="wedding_invitation_url" defaultValue={settings.wedding_invitation_url} placeholder="https://…" type="url" />
+          <TextField label="Link ou arquivo do convite" name="wedding_invitation_url" defaultValue={settings.wedding_invitation_url || "https://drive.google.com/file/d/1-0Xc7VTBQ14IW-3yRS46n5BB0X3AeaJ9/view?usp=sharing"} placeholder="https://…" type="url" />
           <TextField label="Dress code" name="wedding_dress_code" defaultValue={settings.wedding_dress_code ?? "Social"} />
           <TextField label="Frase da capa" name="hero_title" defaultValue={settings.hero_title} />
         </Section>

@@ -84,7 +84,7 @@ export default async function HomePage() {
         address={address ?? ""}
         mapsUrl={mapsUrl || "https://share.google/D9bzAuECKilvEbU6t"}
         parking={parking ?? ""}
-        invitationUrl={invitationUrl ?? ""}
+        invitationUrl={invitationUrl || "https://drive.google.com/file/d/1-0Xc7VTBQ14IW-3yRS46n5BB0X3AeaJ9/view?usp=sharing"}
         dressCode={dressCode || "Social"}
       />
 

@@ -53,6 +53,10 @@ export function WeddingHub({
       ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
       : "";
   const safeInvitationUrl = /^(https?:\/\/|\/)/i.test(invitationUrl) ? invitationUrl : "";
+  const driveFileId = safeInvitationUrl.match(/^https:\/\/drive\.google\.com\/file\/d\/([^/]+)/i)?.[1];
+  const invitationPreviewUrl = driveFileId
+    ? `https://drive.google.com/file/d/${encodeURIComponent(driveFileId)}/preview`
+    : "";
   const calendarStart = /^\d{4}-\d{2}-\d{2}$/.test(date) && /^\d{2}:\d{2}$/.test(time)
     ? new Date(`${date}T${time}:00-03:00`)
     : null;
@@ -186,7 +190,38 @@ export function WeddingHub({
             </div>
 
             {active === "invite" ? (
-              safeInvitationUrl ? <div className="mt-6 flex flex-col gap-3"><a className="rounded-full bg-navy-900 px-6 py-4 text-center text-sm uppercase tracking-wider text-ivory" href={safeInvitationUrl} target="_blank" rel="noreferrer">Ver convite</a><a className="rounded-full border border-navy-900/20 px-6 py-4 text-center text-sm uppercase tracking-wider text-navy-900" href={safeInvitationUrl} download>Salvar convite</a></div> : <p className="mt-5 text-sm leading-relaxed text-navy-800/70">O convite será disponibilizado aqui em breve.</p>
+              safeInvitationUrl ? (
+                <div className="mt-5">
+                  {invitationPreviewUrl ? (
+                    <div className="h-[58dvh] min-h-72 overflow-hidden rounded-lg border border-navy-900/10 bg-navy-50">
+                      <iframe
+                        src={invitationPreviewUrl}
+                        title="Convite de Jéssica & Jennifer"
+                        className="h-full w-full"
+                        loading="lazy"
+                        allowFullScreen
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-sm leading-relaxed text-navy-800/70">
+                      Abra o convite para conferir a versão completa.
+                    </p>
+                  )}
+                  <a
+                    className="mt-3 inline-flex min-h-11 items-center text-sm text-navy-800/70 underline decoration-gold-500/50 underline-offset-4 hover:text-navy-900"
+                    href={safeInvitationUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Abrir convite em outra aba
+                  </a>
+                </div>
+              ) : (
+                <p className="mt-5 text-sm leading-relaxed text-navy-800/70">
+                  O convite será disponibilizado aqui em breve.
+                </p>
+              )
             ) : null}
 
             {active === "date" ? (
