@@ -1,11 +1,9 @@
 import { appsScriptStorage, isAppsScriptConfigured } from "./apps-script";
 import { googleDriveStorage, isDriveConfigured } from "./drive";
-import { localStorage } from "./local";
 import type { PhotoStorage } from "./types";
 
 export type { PhotoStorage, SaveInput, StoredObject } from "./types";
 export { StorageError } from "./types";
-export { isUnsafeStorageKey } from "./local";
 
 export async function photoStorageName() {
   return "drive" as const;

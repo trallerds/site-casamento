@@ -1,6 +1,6 @@
 import { sql, type PhotoUpload } from "@/lib/db";
 import { isAuthenticated, unauthorized } from "@/lib/auth";
-import { getPhotoStorage, isUnsafeStorageKey } from "@/lib/storage";
+import { getPhotoStorage } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +15,6 @@ export async function GET(
 
   if (!photo || !photo.storage_key) {
     return Response.json({ error: "Arquivo não disponível." }, { status: 404 });
-  }
-
-  if (photo.storage_provider === "local" && isUnsafeStorageKey(photo.storage_key)) {
-    return Response.json({ error: "Caminho inválido." }, { status: 400 });
   }
 
   const file = await (await getPhotoStorage()).read(photo.storage_key);
