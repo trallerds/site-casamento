@@ -85,7 +85,7 @@ export default async function HomePage() {
         mapsUrl={mapsUrl || "https://share.google/D9bzAuECKilvEbU6t"}
         parking={parking ?? ""}
         invitationUrl={invitationUrl || "https://drive.google.com/file/d/1-0Xc7VTBQ14IW-3yRS46n5BB0X3AeaJ9/view?usp=sharing"}
-        dressCode={dressCode || "Social"}
+        dressCode={dressCode || "Esporte fino || Social"}
       />
 
       <section id="nossa-historia" className="scroll-mt-8 text-center slide-up">
