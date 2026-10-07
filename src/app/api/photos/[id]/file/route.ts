@@ -21,7 +21,7 @@ export async function GET(
     return Response.json({ error: "Caminho inválido." }, { status: 400 });
   }
 
-  const file = await (await getPhotoStorage(photo.storage_provider)).read(photo.storage_key);
+  const file = await (await getPhotoStorage()).read(photo.storage_key);
   if (!file) {
     return Response.json({ error: "Arquivo não encontrado no armazenamento." }, { status: 404 });
   }

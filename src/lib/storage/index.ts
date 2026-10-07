@@ -16,8 +16,8 @@ export function driveStorage(): PhotoStorage {
   return isAppsScriptConfigured() ? appsScriptStorage : googleDriveStorage;
 }
 
-export async function getPhotoStorage(provider = "drive"): Promise<PhotoStorage> {
-  return provider === "local" ? localStorage : driveStorage();
+export async function getPhotoStorage(): Promise<PhotoStorage> {
+  return driveStorage();
 }
 
 export async function photoStorageHealth() {
