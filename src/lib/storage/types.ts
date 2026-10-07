@@ -8,7 +8,7 @@ export type SaveInput = {
 };
 
 export interface PhotoStorage {
-  readonly name: string;
+  name: "drive";
   save(input: SaveInput): Promise<StoredObject>;
   read(key: string): Promise<{ buffer: Buffer; mimeType: string } | null>;
   delete(stored: StoredObject): Promise<void>;

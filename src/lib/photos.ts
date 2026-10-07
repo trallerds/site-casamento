@@ -13,7 +13,8 @@ export const ALLOWED_MIME = new Set([
   "image/heif",
 ]);
 
-export const ACCEPT_ATTR = "image/jpeg,image/png,image/webp,image/heic,image/heif";
+export const ACCEPT_ATTR =
+  "image/jpeg,image/png,image/webp,image/heic,image/heif";
 
 export function maxPhotoBytes() {
   const parsed = Number(process.env.MAX_PHOTO_BYTES);
@@ -39,8 +40,10 @@ function ascii(buffer: Buffer, start: number, end: number) {
 export function sniffImageMime(buffer: Buffer): string | null {
   if (buffer.length < 12) return null;
   if (startsWith(buffer, [0xff, 0xd8, 0xff])) return "image/jpeg";
-  if (startsWith(buffer, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
-  if (ascii(buffer, 0, 4) === "RIFF" && ascii(buffer, 8, 12) === "WEBP") return "image/webp";
+  if (startsWith(buffer, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+    return "image/png";
+  if (ascii(buffer, 0, 4) === "RIFF" && ascii(buffer, 8, 12) === "WEBP")
+    return "image/webp";
   if (ascii(buffer, 4, 8) === "ftyp") {
     const brand = ascii(buffer, 8, 12);
     if (["heic", "heix", "hevc", "hevx"].includes(brand)) return "image/heic";
@@ -62,10 +65,14 @@ export async function readAndValidatePhoto(file: File) {
   const buffer = Buffer.from(await file.arrayBuffer());
   const detected = sniffImageMime(buffer);
   if (!detected || !ALLOWED_MIME.has(detected)) {
-    throw new PhotoValidationError("Não conseguimos abrir essa imagem. Escolha JPG, PNG, WebP ou HEIC.");
+    throw new PhotoValidationError(
+      "Não conseguimos abrir essa imagem. Escolha JPG, PNG, WebP ou HEIC.",
+    );
   }
   if (file.type && !ALLOWED_MIME.has(file.type)) {
-    throw new PhotoValidationError("Este formato não é aceito. Escolha JPG, PNG, WebP ou HEIC.");
+    throw new PhotoValidationError(
+      "Este formato não é aceito. Escolha JPG, PNG, WebP ou HEIC.",
+    );
   }
   return { buffer, mimeType: detected };
 }
@@ -118,18 +125,6 @@ export async function dropStaged(stagingKey: string | null) {
   }
 }
 
-const EXTENSION_BY_MIME: Record<string, string> = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/webp": ".webp",
-  "image/heic": ".heic",
-  "image/heif": ".heif",
-};
-
-/**
- * `injected` existe para o teste exercitar um storage especifico em vez do que
- * estiver configurado no banco. Em producao sempre cai no getPhotoStorage().
- */
 export async function pushToStorage(
   photo: PhotoUpload,
   buffer: Buffer,
@@ -138,24 +133,9 @@ export async function pushToStorage(
   const storage = injected ?? (await getPhotoStorage());
 
   let stagingKey: string | null = null;
-  if (storage.name !== "local") {
-    try {
-      stagingKey = await stage(photo.public_id, EXTENSION_BY_MIME[photo.mime_type] ?? ".jpg", buffer);
-      await run(
-        `UPDATE photo_uploads SET staging_key = $1, status = 'uploading', error = NULL WHERE id = $2`,
-        [stagingKey, photo.id],
-      );
-    } catch (error) {
-      stagingKey = null;
-      await run(
-        `UPDATE photo_uploads SET status = 'failed', error = $1 WHERE id = $2`,
-        [`Não foi possível guardar uma cópia temporária: ${(error as Error).message}`.slice(0, 300), photo.id],
-      );
-      return { uploaded: false, recoverable: false };
-    }
-  } else {
-    await run(`UPDATE photo_uploads SET status = 'uploading' WHERE id = $1`, [photo.id]);
-  }
+  await run(`UPDATE photo_uploads SET status = 'uploading' WHERE id = $1`, [
+    photo.id,
+  ]);
 
   try {
     const stored = await storage.save({
@@ -183,16 +163,24 @@ export async function pushToStorage(
   }
 }
 
-export async function retryFailedPhoto(publicId: string, storage?: PhotoStorage) {
-  const [photo] = await sql<PhotoUpload>(`SELECT * FROM photo_uploads WHERE public_id = $1`, [
-    publicId,
-  ]);
-  if (!photo || !photo.staging_key) return { ok: false, message: "Sem cópia local para reprocessar." };
+export async function retryFailedPhoto(
+  publicId: string,
+  storage?: PhotoStorage,
+) {
+  const [photo] = await sql<PhotoUpload>(
+    `SELECT * FROM photo_uploads WHERE public_id = $1`,
+    [publicId],
+  );
+  if (!photo || !photo.staging_key)
+    return { ok: false, message: "Sem cópia local para reprocessar." };
   const buffer = await readStaged(photo.staging_key);
-  if (!buffer) return { ok: false, message: "Cópia temporária não encontrada." };
+  if (!buffer)
+    return { ok: false, message: "Cópia temporária não encontrada." };
   const result = await pushToStorage(photo, buffer, storage);
   return {
     ok: result.uploaded,
-    message: result.uploaded ? "Foto guardada no Drive." : "Não foi possível enviar a foto ao Drive.",
+    message: result.uploaded
+      ? "Foto guardada no Drive."
+      : "Não foi possível enviar a foto ao Drive.",
   };
 }
